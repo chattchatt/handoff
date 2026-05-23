@@ -72,14 +72,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Unnamed — Meeting Delivery Agent" },
+      { name: "description", content: "회의 transcript를 고객 전달 산출물, 기억, 증거, 다음 실행으로 변환하는 B2B 워크벤치." },
+      { name: "author", content: "Unnamed" },
+      { property: "og:title", content: "Unnamed — Meeting Delivery Agent" },
+      { property: "og:description", content: "회의 이후 실행을 이어주는 Execution Memory 워크벤치." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
