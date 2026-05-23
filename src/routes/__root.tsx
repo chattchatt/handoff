@@ -79,6 +79,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "회의 이후 실행을 이어주는 Execution Memory 워크벤치." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+    ],
     links: [
       {
         rel: "stylesheet",
