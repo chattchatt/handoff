@@ -50,10 +50,16 @@ export async function callN8n(data: UpflowRequest): Promise<unknown> {
     );
   }
 
+  const params = new URLSearchParams();
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      params.append(key, String(value));
+    }
+  });
+
   const response = await fetch(N8N_WEBHOOK_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: params,
   });
 
   if (!response.ok) {
