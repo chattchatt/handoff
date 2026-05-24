@@ -57,10 +57,24 @@ export async function callN8n(data: UpflowRequest): Promise<unknown> {
     }
   });
 
-  const response = await fetch(N8N_WEBHOOK_URL, {
-    method: "POST",
-    body: params,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+  let response: Response;
+  try {
+    response = await fetch(N8N_WEBHOOK_URL, {
+      method: "POST",
+      body: params,
+      signal: controller.signal,
+    });
+  } catch (e) {
+    clearTimeout(timeoutId);
+    if (e instanceof DOMException && e.name === "AbortError") {
+      throw new Error("n8n 호출 timeout (20초 초과)");
+    }
+    throw e;
+  }
+  clearTimeout(timeoutId);
 
   if (!response.ok) {
     throw new Error(`n8n 호출 실패: ${response.status} ${response.statusText}`);
@@ -71,6 +85,8 @@ export async function callN8n(data: UpflowRequest): Promise<unknown> {
     ? (payload as { data: unknown }).data
     : payload;
 }
+
+export const N8N_WEBHOOK_URL_DEBUG = N8N_WEBHOOK_URL ?? "(설정되지 않음)";
 
 // Safe normalizer for unknown JSON shapes.
 export function normalizeResponse(raw: unknown): ExecutionMemoryResponse {

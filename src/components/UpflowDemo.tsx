@@ -25,6 +25,7 @@ import {
   callN8n,
   normalizeResponse,
   SAMPLE_TRANSCRIPT,
+  N8N_WEBHOOK_URL_DEBUG,
   type DeliveryType,
   type ExecutionMemoryResponse,
   type Tone,
@@ -1150,10 +1151,18 @@ function ErrorState({
               오류 코드: ERR_PROCESS_FAILED
             </div>
             {message && (
-              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[12.5px] text-foreground font-mono">
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[12.5px] text-foreground font-mono break-all">
                 {message}
               </div>
             )}
+            <div className="mt-3">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">
+                VITE_N8N_WEBHOOK_URL
+              </div>
+              <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12px] font-mono break-all">
+                {N8N_WEBHOOK_URL_DEBUG}
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1230,6 +1239,105 @@ function RawJsonDrawer({
           {JSON.stringify(data, null, 2)}
         </pre>
       </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────  DEBUG PANEL  ───────────────────────────── */
+
+const PING_PAYLOAD = {
+  customerName: "Ping",
+  meetingTitle: "Ping",
+  meetingNotes: "Ping",
+  deliveryType: "website_brief",
+  language: "ko",
+} as const;
+
+function DebugPanel() {
+  const [open, setOpen] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<unknown>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const ping = async () => {
+    setLoading(true);
+    setErr(null);
+    setResult(null);
+    try {
+      const r = await callN8n(PING_PAYLOAD as unknown as UpflowRequest);
+      setResult(r);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed bottom-3 right-3 z-40 w-[420px] max-w-[calc(100vw-1.5rem)] rounded-md border border-border bg-surface shadow-lg text-[12px] font-mono">
+      <div className="flex items-center justify-between px-3 h-8 border-b border-border">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          n8n Debug
+        </span>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="text-[11px] text-muted-foreground hover:text-foreground"
+        >
+          {open ? "접기" : "펼치기"}
+        </button>
+      </div>
+      {open && (
+        <div className="p-3 space-y-2 max-h-[60vh] overflow-auto">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              VITE_N8N_WEBHOOK_URL
+            </div>
+            <div className="break-all rounded border border-border bg-surface-2 px-2 py-1.5 text-[11px]">
+              {N8N_WEBHOOK_URL_DEBUG}
+            </div>
+          </div>
+          <button
+            onClick={ping}
+            disabled={loading}
+            className="h-7 px-3 rounded-md text-[12px] bg-primary text-primary-foreground inline-flex items-center gap-1.5 disabled:opacity-60"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+            웹훅 연결 테스트
+          </button>
+          {result !== null && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-success mb-1">
+                ✓ 응답 JSON
+              </div>
+              <pre className="rounded border border-border bg-surface-2 p-2 text-[10.5px] whitespace-pre-wrap break-all">
+                {JSON.stringify(result, null, 2)}
+              </pre>
+            </div>
+          )}
+          {err && (
+            <div className="space-y-1.5">
+              <div className="text-[10px] uppercase tracking-wider text-destructive">
+                ✗ 실패
+              </div>
+              <div className="rounded border border-destructive/40 bg-destructive/10 p-2 text-[11px] break-all">
+                {err}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Webhook URL
+              </div>
+              <div className="rounded border border-border bg-surface-2 p-2 text-[11px] break-all">
+                {N8N_WEBHOOK_URL_DEBUG}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Payload
+              </div>
+              <pre className="rounded border border-border bg-surface-2 p-2 text-[10.5px] whitespace-pre-wrap break-all">
+                {JSON.stringify(PING_PAYLOAD, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1323,6 +1431,7 @@ export default function UpflowDemo() {
       </div>
 
       <RawJsonDrawer open={jsonOpen} onClose={() => setJsonOpen(false)} data={raw} />
+      <DebugPanel />
 
       <style>{`
         .ui-input {
