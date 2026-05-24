@@ -1304,16 +1304,61 @@ function DebugPanel() {
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
             웹훅 연결 테스트
           </button>
-          {result !== null && (
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-success mb-1">
-                ✓ 응답 JSON
+          {result !== null && (() => {
+            const r = (result ?? {}) as Record<string, unknown>;
+            const success = r.success !== false && !r._error;
+            const warnings = Array.isArray(r._warnings) ? (r._warnings as unknown[]) : [];
+            const errObj = (r._error ?? null) as Record<string, unknown> | null;
+            const em = (r.executionMemory ?? {}) as Record<string, unknown>;
+            const prevUsed = Boolean(em.previousContextUsed);
+            const panels = ["meetingUnderstanding", "deliverablePack", "executionMemory", "harness"] as const;
+            return (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-1.5">
+                  <span className={cx("inline-flex items-center rounded-md px-2 py-0.5 text-[10.5px] border", success ? "border-success/40 bg-success/10 text-success" : "border-destructive/40 bg-destructive/10 text-destructive")}>
+                    success: {String(success)}
+                  </span>
+                  <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[10.5px] border border-border bg-surface-2">
+                    warnings: {warnings.length}
+                  </span>
+                  <span className={cx("inline-flex items-center rounded-md px-2 py-0.5 text-[10.5px] border", errObj ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-border bg-surface-2 text-muted-foreground")}>
+                    _error: {errObj ? String(errObj.code ?? "yes") : "null"}
+                  </span>
+                  <span className={cx("inline-flex items-center rounded-md px-2 py-0.5 text-[10.5px] border", prevUsed ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-surface-2 text-muted-foreground")}>
+                    previousContextUsed: {String(prevUsed)}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {panels.map((p) => {
+                    const ok = r[p] && typeof r[p] === "object";
+                    return (
+                      <span key={p} className={cx("inline-flex items-center rounded px-1.5 py-0.5 text-[10px] border", ok ? "border-success/30 bg-success/5 text-success" : "border-destructive/40 bg-destructive/10 text-destructive")}>
+                        {ok ? "✓" : "✗"} {p}
+                      </span>
+                    );
+                  })}
+                </div>
+                {errObj && (
+                  <div className="rounded border border-destructive/40 bg-destructive/10 p-2 text-[10.5px] break-all">
+                    <div className="font-semibold">{String(errObj.code ?? "ERROR")}</div>
+                    <div>{String(errObj.message ?? "")}</div>
+                    {errObj.preview ? <div className="mt-1 opacity-80">preview: {String(errObj.preview)}</div> : null}
+                  </div>
+                )}
+                {warnings.length > 0 && (
+                  <ul className="rounded border border-border bg-surface-2 p-2 text-[10.5px] list-disc pl-4">
+                    {warnings.map((w, i) => <li key={i}>{String(w)}</li>)}
+                  </ul>
+                )}
+                <details>
+                  <summary className="text-[10px] uppercase tracking-wider text-muted-foreground cursor-pointer">Raw JSON</summary>
+                  <pre className="mt-1 rounded border border-border bg-surface-2 p-2 text-[10.5px] whitespace-pre-wrap break-all">
+                    {JSON.stringify(result, null, 2)}
+                  </pre>
+                </details>
               </div>
-              <pre className="rounded border border-border bg-surface-2 p-2 text-[10.5px] whitespace-pre-wrap break-all">
-                {JSON.stringify(result, null, 2)}
-              </pre>
-            </div>
-          )}
+            );
+          })()}
           {err && (
             <div className="space-y-1.5">
               <div className="text-[10px] uppercase tracking-wider text-destructive">
