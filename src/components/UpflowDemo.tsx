@@ -1423,6 +1423,7 @@ export default function UpflowDemo() {
       </div>
 
       <RawJsonDrawer open={jsonOpen} onClose={() => setJsonOpen(false)} data={raw} />
+      <DebugPanel />
 
       <style>{`
         .ui-input {
