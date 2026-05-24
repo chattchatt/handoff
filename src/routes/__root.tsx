@@ -76,9 +76,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "회의 transcript를 고객 전달 산출물, 기억, 증거, 다음 실행으로 변환하는 B2B 워크벤치." },
       { name: "author", content: "Unnamed" },
       { property: "og:title", content: "Unnamed — Meeting Delivery Agent" },
-      { property: "og:description", content: "회의 이후 실행을 이어주는 Execution Memory 워크벤치." },
+      { property: "og:description", content: "회의 transcript를 고객 전달 산출물, 기억, 증거, 다음 실행으로 변환하는 B2B 워크벤치." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Unnamed — Meeting Delivery Agent" },
+      { name: "twitter:description", content: "회의 transcript를 고객 전달 산출물, 기억, 증거, 다음 실행으로 변환하는 B2B 워크벤치." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d13ce7da-015c-440e-b8ed-d67950ffe890/id-preview-7143e9cc--523ca52e-6246-4497-be92-ce36b31e5bdc.lovable.app-1779594679922.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d13ce7da-015c-440e-b8ed-d67950ffe890/id-preview-7143e9cc--523ca52e-6246-4497-be92-ce36b31e5bdc.lovable.app-1779594679922.png" },
     ],
     links: [
       {
