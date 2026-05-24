@@ -1151,10 +1151,18 @@ function ErrorState({
               오류 코드: ERR_PROCESS_FAILED
             </div>
             {message && (
-              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[12.5px] text-foreground font-mono">
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[12.5px] text-foreground font-mono break-all">
                 {message}
               </div>
             )}
+            <div className="mt-3">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">
+                VITE_N8N_WEBHOOK_URL
+              </div>
+              <div className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12px] font-mono break-all">
+                {N8N_WEBHOOK_URL_DEBUG}
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
