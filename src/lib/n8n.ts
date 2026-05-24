@@ -65,10 +65,6 @@ export async function callN8n(data: UpflowRequest): Promise<unknown> {
     response = await fetch(N8N_WEBHOOK_URL, {
       method: "POST",
       body: params,
-      headers: {
-        // Skip localtunnel's reminder interstitial (HTTP 511 otherwise).
-        "bypass-tunnel-reminder": "true",
-      },
       signal: controller.signal,
     });
   } catch (e) {
