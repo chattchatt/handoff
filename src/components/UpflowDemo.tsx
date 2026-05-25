@@ -104,9 +104,9 @@ function Sidebar({
           <div className="h-2 w-2 rounded-sm bg-primary" />
         </div>
         <div className="flex flex-col leading-tight">
-          <span className="text-[13px] font-semibold tracking-tight">Unnamed</span>
+          <span className="text-[13px] font-semibold tracking-tight">Handoff</span>
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            Execution Memory
+            Execution Memory Workbench
           </span>
         </div>
       </div>
