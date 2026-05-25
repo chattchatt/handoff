@@ -24,7 +24,6 @@ import {
 import {
   callN8n,
   normalizeResponse,
-  SAMPLE_TRANSCRIPT,
   N8N_WEBHOOK_URL_DEBUG,
   type DeliveryType,
   type ExecutionMemoryResponse,
@@ -235,8 +234,8 @@ function MeetingInputForm({
           <div className="flex items-center gap-2">
             <span className="panel-title">필수 정보</span>
           </div>
-          <span className="text-[11px] text-muted-foreground">샘플 입력값 프리필됨</span>
         </div>
+
 
         <div className="p-5 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -253,7 +252,7 @@ function MeetingInputForm({
                 value={form.recipient ?? ""}
                 onChange={(e) => setForm({ ...form, recipient: e.target.value })}
                 className="ui-input"
-                placeholder="예: client@acme.com"
+                placeholder="예: client@example.com"
               />
             </Field>
           </div>
@@ -329,7 +328,8 @@ function MeetingInputForm({
           <button
             type="button"
             onClick={onSubmit}
-            className="h-8 px-3.5 rounded-md text-[12.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity inline-flex items-center gap-1.5"
+            disabled={!form.meetingTitle.trim() || !form.transcript.trim()}
+            className="h-8 px-3.5 rounded-md text-[12.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="h-3.5 w-3.5" strokeWidth={2.25} />
             실행 시작
@@ -1392,10 +1392,10 @@ function DebugPanel() {
 export default function UpflowDemo() {
   const [view, setView] = useState<ViewState>("input");
   const [form, setForm] = useState<UpflowRequest>({
-    meetingTitle: "11월 1주 Acme 랜딩 리뉴얼 킥오프",
-    transcript: SAMPLE_TRANSCRIPT,
+    meetingTitle: "",
+    transcript: "",
     deliveryType: "website_brief",
-    recipient: "client@acme.com",
+    recipient: "",
     tone: "professional",
   });
   const [raw, setRaw] = useState<unknown>(null);
