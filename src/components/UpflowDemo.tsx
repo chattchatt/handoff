@@ -44,10 +44,10 @@ type ViewState =
 const NAV: { id: ViewState; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "dashboard", label: "대시보드", icon: LayoutDashboard },
   { id: "input", label: "입력", icon: FileInput },
-  { id: "meeting", label: "회의 이해", icon: Brain },
-  { id: "delivery", label: "전달물", icon: Package },
-  { id: "memory", label: "메모리", icon: Database },
-  { id: "evidence", label: "증거", icon: ShieldCheck },
+  { id: "meeting", label: "목표/맥락", icon: Brain },
+  { id: "delivery", label: "실행 요청", icon: Package },
+  { id: "memory", label: "실행 기억", icon: Database },
+  { id: "evidence", label: "증거 기록", icon: ShieldCheck },
   { id: "error", label: "오류", icon: AlertOctagon },
 ];
 
