@@ -234,8 +234,8 @@ function MeetingInputForm({
           <div className="flex items-center gap-2">
             <span className="panel-title">필수 정보</span>
           </div>
-          <span className="text-[11px] text-muted-foreground">샘플 입력값 프리필됨</span>
         </div>
+
 
         <div className="p-5 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
