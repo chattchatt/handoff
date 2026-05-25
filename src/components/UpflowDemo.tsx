@@ -457,26 +457,26 @@ function ResultDashboard({
   );
 
   const kpis = [
-    { label: "전체 실행 상태", value: "완료", helper: "4 / 4 영역 처리됨", tone: "success" as const },
-    { label: "증거 항목", value: String(doneCount), helper: "검증된 근거" },
-    { label: "미결 항목", value: String(missingCount), helper: "후속 조치 필요", tone: "warning" as const },
-    { label: "신뢰도 점수", value: `${confidence}`, helper: "종합 품질 지수" },
+    { label: "Handoff 상태", value: "Ready", helper: "다음 Agent Run 인계 가능", tone: "success" as const },
+    { label: "증거 기록", value: String(doneCount), helper: "검증된 근거" },
+    { label: "다음 실행 항목", value: String(data.executionMemory.nextActions.length), helper: "다음 Agent가 처리할 작업" },
+    { label: "누락 증거", value: String(missingCount), helper: "후속 확보 필요", tone: "warning" as const },
   ];
 
   const domains: { id: ViewState; label: string; status: string; tone: "success" | "warning" }[] = [
-    { id: "meeting", label: "회의 이해", status: "완료", tone: "success" },
-    { id: "memory", label: "기억과 다음 실행", status: "완료", tone: "success" },
-    { id: "delivery", label: "Delivery Pack", status: "검토 필요", tone: "warning" },
-    { id: "evidence", label: "증거 검증", status: "완료", tone: "success" },
+    { id: "meeting", label: "목표/맥락", status: "정리 완료", tone: "success" },
+    { id: "memory", label: "실행 기억", status: "동기화 완료", tone: "success" },
+    { id: "delivery", label: "실행 요청", status: "검토 필요", tone: "warning" },
+    { id: "evidence", label: "증거 기록", status: "검증 완료", tone: "success" },
   ];
 
   return (
     <div className="max-w-6xl mx-auto w-full px-6 py-6 space-y-5">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight">결과 대시보드</h1>
+          <h1 className="text-[22px] font-semibold tracking-tight">Handoff 작업대</h1>
           <p className="text-[12.5px] text-muted-foreground mt-1">
-            처리 완료 · 4개 결과 영역 생성됨
+            업무 맥락이 실행 기억 · 증거 · 다음 실행으로 정리되었습니다
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -491,7 +491,7 @@ function ResultDashboard({
             onClick={() => setView("meeting")}
             className="h-8 px-3 rounded-md text-[12px] bg-primary text-primary-foreground inline-flex items-center gap-1.5"
           >
-            회의 이해 상세 보기
+            목표/맥락 상세 보기
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
