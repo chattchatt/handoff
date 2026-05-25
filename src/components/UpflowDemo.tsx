@@ -1391,10 +1391,10 @@ function DebugPanel() {
 export default function UpflowDemo() {
   const [view, setView] = useState<ViewState>("input");
   const [form, setForm] = useState<UpflowRequest>({
-    meetingTitle: "11월 1주 Acme 랜딩 리뉴얼 킥오프",
-    transcript: SAMPLE_TRANSCRIPT,
+    meetingTitle: "",
+    transcript: "",
     deliveryType: "website_brief",
-    recipient: "client@acme.com",
+    recipient: "",
     tone: "professional",
   });
   const [raw, setRaw] = useState<unknown>(null);
