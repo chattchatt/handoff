@@ -252,7 +252,7 @@ function MeetingInputForm({
                 value={form.recipient ?? ""}
                 onChange={(e) => setForm({ ...form, recipient: e.target.value })}
                 className="ui-input"
-                placeholder="예: client@acme.com"
+                placeholder="예: client@example.com"
               />
             </Field>
           </div>
