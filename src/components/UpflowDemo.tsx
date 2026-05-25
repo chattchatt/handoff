@@ -328,7 +328,8 @@ function MeetingInputForm({
           <button
             type="button"
             onClick={onSubmit}
-            className="h-8 px-3.5 rounded-md text-[12.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity inline-flex items-center gap-1.5"
+            disabled={!form.meetingTitle.trim() || !form.transcript.trim()}
+            className="h-8 px-3.5 rounded-md text-[12.5px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="h-3.5 w-3.5" strokeWidth={2.25} />
             실행 시작
