@@ -24,7 +24,6 @@ import {
 import {
   callN8n,
   normalizeResponse,
-  SAMPLE_TRANSCRIPT,
   N8N_WEBHOOK_URL_DEBUG,
   type DeliveryType,
   type ExecutionMemoryResponse,
