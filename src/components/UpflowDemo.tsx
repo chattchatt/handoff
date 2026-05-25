@@ -223,12 +223,6 @@ function MeetingInputForm({
       {/* Intro */}
       <div className="space-y-3">
         <div className="text-[11px] font-medium uppercase tracking-wider text-primary">
-          Meeting Delivery Agent
-        </div>
-        <h1 className="text-[26px] font-semibold tracking-tight leading-tight">
-      {/* Intro */}
-      <div className="space-y-3">
-        <div className="text-[11px] font-medium uppercase tracking-wider text-primary">
           Handoff Execution Memory Workbench
         </div>
         <h1 className="text-[26px] font-semibold tracking-tight leading-tight">
