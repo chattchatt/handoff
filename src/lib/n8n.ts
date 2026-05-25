@@ -93,9 +93,12 @@ export type ExecutionMemoryResponse = {
 };
 
 export async function callN8n(data: UpflowRequest): Promise<unknown> {
-  if (!N8N_WEBHOOK_URL) {
+  if (isUnreachableWebhook(N8N_WEBHOOK_URL)) {
+    if (ENABLE_DEMO_FALLBACK) {
+      return buildDemoFallback(data);
+    }
     throw new Error(
-      "VITE_N8N_WEBHOOK_URL 환경변수가 설정되지 않았습니다. Lovable 환경 변수에서 추가해주세요.",
+      "VITE_N8N_WEBHOOK_URL이 비어있거나 localhost입니다. 공개 접근 가능한 n8n webhook URL을 설정하거나 VITE_ENABLE_DEMO_FALLBACK=true를 사용하세요.",
     );
   }
 
@@ -111,13 +114,16 @@ export async function callN8n(data: UpflowRequest): Promise<unknown> {
 
   let response: Response;
   try {
-    response = await fetch(N8N_WEBHOOK_URL, {
+    response = await fetch(N8N_WEBHOOK_URL as string, {
       method: "POST",
       body: params,
       signal: controller.signal,
     });
   } catch (e) {
     clearTimeout(timeoutId);
+    if (ENABLE_DEMO_FALLBACK) {
+      return buildDemoFallback(data);
+    }
     if (e instanceof DOMException && e.name === "AbortError") {
       throw new Error("n8n 호출 timeout (20초 초과)");
     }
@@ -126,6 +132,9 @@ export async function callN8n(data: UpflowRequest): Promise<unknown> {
   clearTimeout(timeoutId);
 
   if (!response.ok) {
+    if (ENABLE_DEMO_FALLBACK) {
+      return buildDemoFallback(data);
+    }
     throw new Error(`n8n 호출 실패: ${response.status} ${response.statusText}`);
   }
 
