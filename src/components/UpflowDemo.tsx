@@ -184,13 +184,20 @@ function TopBar({ view }: { view: ViewState }) {
 /* ─────────────────────────────  INPUT  ───────────────────────────── */
 
 function RuntimeFlowStrip() {
-  const steps = ["Lovable UI", "n8n Webhook", "Upstage", "기억 + 증거 + 다음 실행"];
+  const steps = [
+    "Input Context",
+    "n8n Runtime",
+    "Upstage Analysis",
+    "Execution Memory",
+    "Evidence Ledger",
+    "Next Agent Run",
+  ];
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {steps.map((s, i) => (
         <span key={s} className="flex items-center gap-1.5">
           <span className="pill">
-            <span className="pill-dot" style={{ background: i === 3 ? "var(--primary)" : undefined }} />
+            <span className="pill-dot" style={{ background: i === steps.length - 1 ? "var(--primary)" : undefined }} />
             {s}
           </span>
           {i < steps.length - 1 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
