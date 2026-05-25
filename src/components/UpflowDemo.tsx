@@ -226,11 +226,17 @@ function MeetingInputForm({
           Meeting Delivery Agent
         </div>
         <h1 className="text-[26px] font-semibold tracking-tight leading-tight">
-          회의 이후 실행을 이어주는 워크벤치
+      {/* Intro */}
+      <div className="space-y-3">
+        <div className="text-[11px] font-medium uppercase tracking-wider text-primary">
+          Handoff Execution Memory Workbench
+        </div>
+        <h1 className="text-[26px] font-semibold tracking-tight leading-tight">
+          다음 Agent Run이 이어받을 실행 상태를 만드는 작업대
         </h1>
         <p className="text-[13.5px] text-muted-foreground max-w-2xl leading-relaxed">
-          고객 미팅 transcript를 고객 전달 산출물, 기억, 증거, 다음 실행으로 변환합니다.
-          회의는 일회성 노트로 끝나지 않습니다.
+          회의, 메모, 이슈, 업무 요청처럼 흩어진 업무 맥락을 실행 기억, 증거, 다음 실행 요청으로
+          변환합니다. Meeting Delivery는 첫 번째 입력 사례일 뿐입니다.
         </p>
         <RuntimeFlowStrip />
       </div>
@@ -239,7 +245,7 @@ function MeetingInputForm({
       <div className="panel">
         <div className="panel-header">
           <div className="flex items-center gap-2">
-            <span className="panel-title">필수 정보</span>
+            <span className="panel-title">업무 맥락 입력</span>
           </div>
         </div>
 
