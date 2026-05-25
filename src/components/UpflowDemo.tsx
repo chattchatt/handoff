@@ -310,16 +310,17 @@ function MeetingInputForm({
             </div>
           </Field>
 
-          <Field label="트랜스크립트">
+          <Field label="업무 맥락">
             <textarea
               value={form.transcript}
               onChange={(e) => setForm({ ...form, transcript: e.target.value })}
               rows={10}
               className="ui-input font-mono text-[12.5px] leading-relaxed resize-y"
+              placeholder="회의록, 고객 메모, Slack 논의, 이슈 설명, 작업 요청을 붙여넣으세요. Handoff가 다음 Agent Run이 이어받을 실행 기억으로 정리합니다."
             />
             <div className="mt-1.5 flex justify-between text-[11px] text-muted-foreground">
               <span>{form.transcript.length.toLocaleString()} chars</span>
-              <span>고객 발화/PM 발화 형식 권장</span>
+              <span>다음 Agent가 사용한 맥락 · 증거 · 다음 실행으로 변환됩니다</span>
             </div>
           </Field>
         </div>
