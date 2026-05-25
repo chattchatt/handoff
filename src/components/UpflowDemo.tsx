@@ -370,12 +370,20 @@ function Field({
 /* ─────────────────────────────  LOADING  ───────────────────────────── */
 
 function ProcessingState({ onCancel }: { onCancel: () => void }) {
-  const steps = ["입력 데이터 검증 중", "AI 분석 처리 중", "결과 생성 중"];
+  const steps = [
+    "Input Context · 업무 맥락 수신",
+    "n8n Runtime · 파이프라인 실행",
+    "Upstage Analysis · 의미 분석",
+    "Execution Memory · 실행 기억 정리",
+    "Evidence Ledger · 증거 기록",
+    "Next Agent Run · 다음 실행 준비",
+  ];
+  const activeIdx = 2;
   return (
     <div className="max-w-2xl mx-auto w-full px-6 py-10">
       <div className="panel overflow-hidden">
         <div className="panel-header">
-          <span className="panel-title">처리 진행 중</span>
+          <span className="panel-title">Handoff 파이프라인 실행 중</span>
           <span className="pill">
             <Loader2 className="h-3 w-3 animate-spin" />
             executing
@@ -386,9 +394,9 @@ function ProcessingState({ onCancel }: { onCancel: () => void }) {
             {steps.map((s, i) => (
               <div key={s} className="flex items-center gap-3">
                 <div className="h-6 w-6 rounded-md border border-border bg-surface-2 flex items-center justify-center">
-                  {i === 0 ? (
+                  {i < activeIdx ? (
                     <Check className="h-3.5 w-3.5 text-success" />
-                  ) : i === 1 ? (
+                  ) : i === activeIdx ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
                   ) : (
                     <Circle className="h-3 w-3 text-muted-foreground" />
@@ -397,7 +405,7 @@ function ProcessingState({ onCancel }: { onCancel: () => void }) {
                 <span
                   className={cx(
                     "text-[13px]",
-                    i === 1 ? "text-foreground" : "text-muted-foreground",
+                    i === activeIdx ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   {s}
