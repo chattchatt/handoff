@@ -1,4 +1,53 @@
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL as string | undefined;
+const ENABLE_DEMO_FALLBACK =
+  String(import.meta.env.VITE_ENABLE_DEMO_FALLBACK ?? "true").toLowerCase() !== "false";
+
+function isUnreachableWebhook(url: string | undefined): boolean {
+  if (!url) return true;
+  try {
+    const u = new URL(url);
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1" || u.hostname === "0.0.0.0") {
+      return true;
+    }
+  } catch {
+    return true;
+  }
+  return false;
+}
+
+function buildDemoFallback(data: UpflowRequest): Record<string, unknown> {
+  const title = data.meetingTitle || "데모 미팅";
+  return {
+    _demoFallback: "DEMO_FALLBACK_USED",
+    meetingUnderstanding: {
+      goal: `${title}의 핵심 목표 정리 (데모 fallback)`,
+      customerContext: "공개 Lovable 데모용 응답입니다. 실제 n8n webhook이 연결되면 실사용 결과로 대체됩니다.",
+      keyDecisions: ["데모 fallback으로 UI 흐름 검증", "실제 LLM 응답은 webhook 연결 후 사용"],
+      requirements: ["webhook URL 환경변수 설정", "공개 접근 가능한 n8n 인스턴스"],
+      missingInfo: ["실제 고객 상세 컨텍스트", "live n8n endpoint"],
+      risks: ["로컬 또는 임시 tunnel URL은 공개 사용자에게 도달 불가"],
+    },
+    deliverablePack: {
+      type: data.deliveryType,
+      title: `${title} - 데모 산출물`,
+      customerMessage: "안녕하세요, 데모 응답입니다. 실제 결과는 webhook 연결 후 생성됩니다.",
+      brief: "이 응답은 demo fallback입니다. UI 4패널 구조 검증용입니다.",
+      tasks: ["webhook URL 확보", "환경변수 갱신", "fallback 비활성화 후 재검증"],
+    },
+    executionMemory: {
+      previousContextUsed: false,
+      nextActions: ["VITE_N8N_WEBHOOK_URL을 안정적인 공개 URL로 교체"],
+      memoryToPersist: ["demo fallback이 사용됨"],
+      continuationPrompt: "실제 webhook 연결 후 동일 입력으로 재실행해 결과 비교",
+    },
+    harness: {
+      doneEvidence: ["UI 4패널 렌더링 확인"],
+      missingEvidence: ["실제 n8n + Upstage 응답"],
+      qualityChecklist: ["webhook 200 OK", "응답 success: true", "4패널 모두 채워짐"],
+      nextVerificationStep: "stable webhook URL로 VITE_ENABLE_DEMO_FALLBACK=false 설정 후 재실행",
+    },
+  };
+}
 
 export type DeliveryType = "website_brief" | "followup_email" | "prd" | "task_package";
 export type Tone = "professional" | "friendly" | "direct";
@@ -44,9 +93,12 @@ export type ExecutionMemoryResponse = {
 };
 
 export async function callN8n(data: UpflowRequest): Promise<unknown> {
-  if (!N8N_WEBHOOK_URL) {
+  if (isUnreachableWebhook(N8N_WEBHOOK_URL)) {
+    if (ENABLE_DEMO_FALLBACK) {
+      return buildDemoFallback(data);
+    }
     throw new Error(
-      "VITE_N8N_WEBHOOK_URL 환경변수가 설정되지 않았습니다. Lovable 환경 변수에서 추가해주세요.",
+      "VITE_N8N_WEBHOOK_URL이 비어있거나 localhost입니다. 공개 접근 가능한 n8n webhook URL을 설정하거나 VITE_ENABLE_DEMO_FALLBACK=true를 사용하세요.",
     );
   }
 
@@ -62,13 +114,16 @@ export async function callN8n(data: UpflowRequest): Promise<unknown> {
 
   let response: Response;
   try {
-    response = await fetch(N8N_WEBHOOK_URL, {
+    response = await fetch(N8N_WEBHOOK_URL as string, {
       method: "POST",
       body: params,
       signal: controller.signal,
     });
   } catch (e) {
     clearTimeout(timeoutId);
+    if (ENABLE_DEMO_FALLBACK) {
+      return buildDemoFallback(data);
+    }
     if (e instanceof DOMException && e.name === "AbortError") {
       throw new Error("n8n 호출 timeout (20초 초과)");
     }
@@ -77,6 +132,9 @@ export async function callN8n(data: UpflowRequest): Promise<unknown> {
   clearTimeout(timeoutId);
 
   if (!response.ok) {
+    if (ENABLE_DEMO_FALLBACK) {
+      return buildDemoFallback(data);
+    }
     throw new Error(`n8n 호출 실패: ${response.status} ${response.statusText}`);
   }
 
