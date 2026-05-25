@@ -44,10 +44,10 @@ type ViewState =
 const NAV: { id: ViewState; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "dashboard", label: "대시보드", icon: LayoutDashboard },
   { id: "input", label: "입력", icon: FileInput },
-  { id: "meeting", label: "회의 이해", icon: Brain },
-  { id: "delivery", label: "전달물", icon: Package },
-  { id: "memory", label: "메모리", icon: Database },
-  { id: "evidence", label: "증거", icon: ShieldCheck },
+  { id: "meeting", label: "목표/맥락", icon: Brain },
+  { id: "delivery", label: "실행 요청", icon: Package },
+  { id: "memory", label: "실행 기억", icon: Database },
+  { id: "evidence", label: "증거 기록", icon: ShieldCheck },
   { id: "error", label: "오류", icon: AlertOctagon },
 ];
 
@@ -104,9 +104,9 @@ function Sidebar({
           <div className="h-2 w-2 rounded-sm bg-primary" />
         </div>
         <div className="flex flex-col leading-tight">
-          <span className="text-[13px] font-semibold tracking-tight">Unnamed</span>
+          <span className="text-[13px] font-semibold tracking-tight">Handoff</span>
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            Execution Memory
+            Execution Memory Workbench
           </span>
         </div>
       </div>
@@ -162,7 +162,7 @@ function TopBar({ view }: { view: ViewState }) {
   return (
     <div className="h-12 border-b border-border bg-background/80 backdrop-blur flex items-center px-4 gap-3">
       <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-        <span>Meeting Delivery Agent</span>
+        <span>Handoff Workbench</span>
         <ChevronRight className="h-3 w-3" />
         <span className="text-foreground">{crumb}</span>
       </div>
@@ -184,13 +184,20 @@ function TopBar({ view }: { view: ViewState }) {
 /* ─────────────────────────────  INPUT  ───────────────────────────── */
 
 function RuntimeFlowStrip() {
-  const steps = ["Lovable UI", "n8n Webhook", "Upstage", "기억 + 증거 + 다음 실행"];
+  const steps = [
+    "Input Context",
+    "n8n Runtime",
+    "Upstage Analysis",
+    "Execution Memory",
+    "Evidence Ledger",
+    "Next Agent Run",
+  ];
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {steps.map((s, i) => (
         <span key={s} className="flex items-center gap-1.5">
           <span className="pill">
-            <span className="pill-dot" style={{ background: i === 3 ? "var(--primary)" : undefined }} />
+            <span className="pill-dot" style={{ background: i === steps.length - 1 ? "var(--primary)" : undefined }} />
             {s}
           </span>
           {i < steps.length - 1 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
@@ -216,14 +223,14 @@ function MeetingInputForm({
       {/* Intro */}
       <div className="space-y-3">
         <div className="text-[11px] font-medium uppercase tracking-wider text-primary">
-          Meeting Delivery Agent
+          Handoff Execution Memory Workbench
         </div>
         <h1 className="text-[26px] font-semibold tracking-tight leading-tight">
-          회의 이후 실행을 이어주는 워크벤치
+          다음 Agent Run이 이어받을 실행 상태를 만드는 작업대
         </h1>
         <p className="text-[13.5px] text-muted-foreground max-w-2xl leading-relaxed">
-          고객 미팅 transcript를 고객 전달 산출물, 기억, 증거, 다음 실행으로 변환합니다.
-          회의는 일회성 노트로 끝나지 않습니다.
+          회의, 메모, 이슈, 업무 요청처럼 흩어진 업무 맥락을 실행 기억, 증거, 다음 실행 요청으로
+          변환합니다. Meeting Delivery는 첫 번째 입력 사례일 뿐입니다.
         </p>
         <RuntimeFlowStrip />
       </div>
@@ -232,7 +239,7 @@ function MeetingInputForm({
       <div className="panel">
         <div className="panel-header">
           <div className="flex items-center gap-2">
-            <span className="panel-title">필수 정보</span>
+            <span className="panel-title">업무 맥락 입력</span>
           </div>
         </div>
 
@@ -303,16 +310,17 @@ function MeetingInputForm({
             </div>
           </Field>
 
-          <Field label="트랜스크립트">
+          <Field label="업무 맥락">
             <textarea
               value={form.transcript}
               onChange={(e) => setForm({ ...form, transcript: e.target.value })}
               rows={10}
               className="ui-input font-mono text-[12.5px] leading-relaxed resize-y"
+              placeholder="회의록, 고객 메모, Slack 논의, 이슈 설명, 작업 요청을 붙여넣으세요. Handoff가 다음 Agent Run이 이어받을 실행 기억으로 정리합니다."
             />
             <div className="mt-1.5 flex justify-between text-[11px] text-muted-foreground">
               <span>{form.transcript.length.toLocaleString()} chars</span>
-              <span>고객 발화/PM 발화 형식 권장</span>
+              <span>다음 Agent가 사용한 맥락 · 증거 · 다음 실행으로 변환됩니다</span>
             </div>
           </Field>
         </div>
@@ -362,12 +370,20 @@ function Field({
 /* ─────────────────────────────  LOADING  ───────────────────────────── */
 
 function ProcessingState({ onCancel }: { onCancel: () => void }) {
-  const steps = ["입력 데이터 검증 중", "AI 분석 처리 중", "결과 생성 중"];
+  const steps = [
+    "Input Context · 업무 맥락 수신",
+    "n8n Runtime · 파이프라인 실행",
+    "Upstage Analysis · 의미 분석",
+    "Execution Memory · 실행 기억 정리",
+    "Evidence Ledger · 증거 기록",
+    "Next Agent Run · 다음 실행 준비",
+  ];
+  const activeIdx = 2;
   return (
     <div className="max-w-2xl mx-auto w-full px-6 py-10">
       <div className="panel overflow-hidden">
         <div className="panel-header">
-          <span className="panel-title">처리 진행 중</span>
+          <span className="panel-title">Handoff 파이프라인 실행 중</span>
           <span className="pill">
             <Loader2 className="h-3 w-3 animate-spin" />
             executing
@@ -378,9 +394,9 @@ function ProcessingState({ onCancel }: { onCancel: () => void }) {
             {steps.map((s, i) => (
               <div key={s} className="flex items-center gap-3">
                 <div className="h-6 w-6 rounded-md border border-border bg-surface-2 flex items-center justify-center">
-                  {i === 0 ? (
+                  {i < activeIdx ? (
                     <Check className="h-3.5 w-3.5 text-success" />
-                  ) : i === 1 ? (
+                  ) : i === activeIdx ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
                   ) : (
                     <Circle className="h-3 w-3 text-muted-foreground" />
@@ -389,7 +405,7 @@ function ProcessingState({ onCancel }: { onCancel: () => void }) {
                 <span
                   className={cx(
                     "text-[13px]",
-                    i === 1 ? "text-foreground" : "text-muted-foreground",
+                    i === activeIdx ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   {s}
@@ -441,26 +457,26 @@ function ResultDashboard({
   );
 
   const kpis = [
-    { label: "전체 실행 상태", value: "완료", helper: "4 / 4 영역 처리됨", tone: "success" as const },
-    { label: "증거 항목", value: String(doneCount), helper: "검증된 근거" },
-    { label: "미결 항목", value: String(missingCount), helper: "후속 조치 필요", tone: "warning" as const },
-    { label: "신뢰도 점수", value: `${confidence}`, helper: "종합 품질 지수" },
+    { label: "Handoff 상태", value: "Ready", helper: "다음 Agent Run 인계 가능", tone: "success" as const },
+    { label: "증거 기록", value: String(doneCount), helper: "검증된 근거" },
+    { label: "다음 실행 항목", value: String(data.executionMemory.nextActions.length), helper: "다음 Agent가 처리할 작업" },
+    { label: "누락 증거", value: String(missingCount), helper: "후속 확보 필요", tone: "warning" as const },
   ];
 
   const domains: { id: ViewState; label: string; status: string; tone: "success" | "warning" }[] = [
-    { id: "meeting", label: "회의 이해", status: "완료", tone: "success" },
-    { id: "memory", label: "기억과 다음 실행", status: "완료", tone: "success" },
-    { id: "delivery", label: "Delivery Pack", status: "검토 필요", tone: "warning" },
-    { id: "evidence", label: "증거 검증", status: "완료", tone: "success" },
+    { id: "meeting", label: "목표/맥락", status: "정리 완료", tone: "success" },
+    { id: "memory", label: "실행 기억", status: "동기화 완료", tone: "success" },
+    { id: "delivery", label: "실행 요청", status: "검토 필요", tone: "warning" },
+    { id: "evidence", label: "증거 기록", status: "검증 완료", tone: "success" },
   ];
 
   return (
     <div className="max-w-6xl mx-auto w-full px-6 py-6 space-y-5">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight">결과 대시보드</h1>
+          <h1 className="text-[22px] font-semibold tracking-tight">Handoff 작업대</h1>
           <p className="text-[12.5px] text-muted-foreground mt-1">
-            처리 완료 · 4개 결과 영역 생성됨
+            업무 맥락이 실행 기억 · 증거 · 다음 실행으로 정리되었습니다
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -475,7 +491,7 @@ function ResultDashboard({
             onClick={() => setView("meeting")}
             className="h-8 px-3 rounded-md text-[12px] bg-primary text-primary-foreground inline-flex items-center gap-1.5"
           >
-            회의 이해 상세 보기
+            목표/맥락 상세 보기
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
