@@ -162,7 +162,7 @@ function TopBar({ view }: { view: ViewState }) {
   return (
     <div className="h-12 border-b border-border bg-background/80 backdrop-blur flex items-center px-4 gap-3">
       <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-        <span>Meeting Delivery Agent</span>
+        <span>Handoff Workbench</span>
         <ChevronRight className="h-3 w-3" />
         <span className="text-foreground">{crumb}</span>
       </div>
