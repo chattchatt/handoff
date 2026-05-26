@@ -1,30 +1,15 @@
-const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL as string | undefined;
+const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
 
-function isUnreachableWebhook(url: string | undefined): boolean {
-  if (!url) return true;
-  try {
-    const u = new URL(url);
-    if (u.hostname === "localhost" || u.hostname === "127.0.0.1" || u.hostname === "0.0.0.0") {
-      return true;
-    }
-  } catch {
-    return true;
-  }
-  return false;
-}
-
-export type DeliveryType = "website_brief" | "followup_email" | "prd" | "task_package";
-export type Tone = "professional" | "friendly" | "direct";
-
-export type UpflowRequest = {
+export type HandoffRequest = {
   meetingTitle: string;
   transcript: string;
-  deliveryType: DeliveryType;
+  deliveryType: 'website_brief' | 'followup_email' | 'prd' | 'task_package';
   recipient?: string;
-  tone?: Tone;
+  tone?: 'professional' | 'friendly' | 'direct';
 };
 
-export type ExecutionMemoryResponse = {
+export type HandoffResponse = {
+  success?: boolean;
   meetingUnderstanding: {
     goal: string;
     customerContext: string;
@@ -54,93 +39,63 @@ export type ExecutionMemoryResponse = {
     qualityChecklist: string[];
     nextVerificationStep: string;
   };
+  _warnings?: string[];
+  _error?: {
+    code?: string;
+    message?: string;
+    preview?: string;
+  } | null;
+  _raw?: unknown;
 };
 
-export async function callN8n(data: UpflowRequest): Promise<unknown> {
-  if (isUnreachableWebhook(N8N_WEBHOOK_URL)) {
-    throw new Error(
-      "VITE_N8N_WEBHOOK_URL이 설정되지 않았거나 localhost입니다. 공개 접근 가능한 n8n webhook URL을 설정하세요.",
-    );
+function isLocalWebhookUrl(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname;
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]';
+  } catch {
+    return false;
+  }
+}
+
+export async function callN8n(data: HandoffRequest): Promise<unknown> {
+  if (!N8N_WEBHOOK_URL) {
+    throw new Error('VITE_N8N_WEBHOOK_URL 환경변수가 설정되지 않았습니다.');
   }
 
-  const params = new URLSearchParams();
-  Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      params.append(key, String(value));
-    }
-  });
+  if (isLocalWebhookUrl(N8N_WEBHOOK_URL)) {
+    throw new Error(`Hosted Lovable에서는 localhost webhook URL을 사용할 수 없습니다. URL: ${N8N_WEBHOOK_URL}`);
+  }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  const timeoutId = window.setTimeout(() => controller.abort(), 20000);
+
+  const body = new URLSearchParams();
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) body.set(key, String(value));
+  });
 
   let response: Response;
   try {
-    response = await fetch(N8N_WEBHOOK_URL as string, {
-      method: "POST",
-      body: params,
+    response = await fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      body,
       signal: controller.signal,
     });
-  } catch (e) {
-    clearTimeout(timeoutId);
-    if (e instanceof DOMException && e.name === "AbortError") {
-      throw new Error("n8n 호출 timeout (20초 초과)");
-    }
-    throw e;
+  } catch (error) {
+    const message = error instanceof DOMException && error.name === 'AbortError'
+      ? 'n8n 호출 시간이 20초를 초과했습니다.'
+      : error instanceof Error
+        ? error.message
+        : 'n8n 호출 중 네트워크 오류가 발생했습니다.';
+    throw new Error(`${message} URL: ${N8N_WEBHOOK_URL}`);
+  } finally {
+    window.clearTimeout(timeoutId);
   }
-  clearTimeout(timeoutId);
 
   if (!response.ok) {
-    throw new Error(`n8n 호출 실패: ${response.status} ${response.statusText}`);
+    throw new Error(`n8n 호출 실패: ${response.status} ${response.statusText}. URL: ${N8N_WEBHOOK_URL}`);
   }
 
   const payload = await response.json();
-  return (payload && typeof payload === "object" && "data" in payload)
-    ? (payload as { data: unknown }).data
-    : payload;
-}
-
-export const N8N_WEBHOOK_URL_DEBUG = N8N_WEBHOOK_URL ?? "(설정되지 않음)";
-
-// Safe normalizer for unknown JSON shapes.
-export function normalizeResponse(raw: unknown): ExecutionMemoryResponse {
-  const r = (raw ?? {}) as Record<string, unknown>;
-  const mu = (r.meetingUnderstanding ?? {}) as Record<string, unknown>;
-  const dp = (r.deliverablePack ?? {}) as Record<string, unknown>;
-  const em = (r.executionMemory ?? {}) as Record<string, unknown>;
-  const h = (r.harness ?? {}) as Record<string, unknown>;
-
-  const str = (v: unknown) => (typeof v === "string" && v.length ? v : "-");
-  const arr = (v: unknown) => (Array.isArray(v) ? v.map((x) => String(x)) : []);
-
-  return {
-    meetingUnderstanding: {
-      goal: str(mu.goal),
-      customerContext: str(mu.customerContext),
-      keyDecisions: arr(mu.keyDecisions),
-      requirements: arr(mu.requirements),
-      missingInfo: arr(mu.missingInfo),
-      risks: arr(mu.risks),
-    },
-    deliverablePack: {
-      type: str(dp.type),
-      title: str(dp.title),
-      customerMessage: str(dp.customerMessage),
-      brief: str(dp.brief),
-      lovablePrompt: typeof dp.lovablePrompt === "string" ? dp.lovablePrompt : undefined,
-      prd: typeof dp.prd === "string" ? dp.prd : undefined,
-      tasks: arr(dp.tasks),
-    },
-    executionMemory: {
-      previousContextUsed: Boolean(em.previousContextUsed),
-      nextActions: arr(em.nextActions),
-      memoryToPersist: arr(em.memoryToPersist),
-      continuationPrompt: str(em.continuationPrompt),
-    },
-    harness: {
-      doneEvidence: arr(h.doneEvidence),
-      missingEvidence: arr(h.missingEvidence),
-      qualityChecklist: arr(h.qualityChecklist),
-      nextVerificationStep: str(h.nextVerificationStep),
-    },
-  };
+  return payload.data ?? payload;
 }

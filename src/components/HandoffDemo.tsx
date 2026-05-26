@@ -1,0 +1,787 @@
+import { useMemo, useState, type ReactNode } from 'react';
+import { callN8n, type HandoffRequest, type HandoffResponse } from '@/lib/n8n';
+
+type WorkbenchView = 'input' | 'loading' | 'dashboard' | 'meeting' | 'delivery' | 'memory' | 'evidence' | 'error';
+type Lang = 'ko' | 'en';
+
+const deliveryOptionsByLang: Record<Lang, Array<{ label: string; value: HandoffRequest['deliveryType'] }>> = {
+  ko: [
+    { label: '워크 브리프', value: 'website_brief' },
+    { label: '후속 메시지', value: 'followup_email' },
+    { label: 'PRD', value: 'prd' },
+    { label: '작업 패키지', value: 'task_package' },
+  ],
+  en: [
+    { label: 'Work brief', value: 'website_brief' },
+    { label: 'Follow-up message', value: 'followup_email' },
+    { label: 'PRD', value: 'prd' },
+    { label: 'Task package', value: 'task_package' },
+  ],
+};
+
+const navItemsByLang: Record<Lang, Array<{ id: WorkbenchView; label: string; eyebrow: string }>> = {
+  ko: [
+    { id: 'dashboard', label: '대시보드', eyebrow: 'Overview' },
+    { id: 'input', label: '입력', eyebrow: 'Context' },
+    { id: 'meeting', label: '목표/맥락', eyebrow: 'Goal State' },
+    { id: 'delivery', label: '실행 요청', eyebrow: 'Requests' },
+    { id: 'memory', label: '실행 기억', eyebrow: 'Memory' },
+    { id: 'evidence', label: '증거 기록', eyebrow: 'Evidence' },
+  ],
+  en: [
+    { id: 'dashboard', label: 'Dashboard', eyebrow: 'Overview' },
+    { id: 'input', label: 'Input', eyebrow: 'Context' },
+    { id: 'meeting', label: 'Goal / Context', eyebrow: 'Goal State' },
+    { id: 'delivery', label: 'Execution Requests', eyebrow: 'Requests' },
+    { id: 'memory', label: 'Execution Memory', eyebrow: 'Memory' },
+    { id: 'evidence', label: 'Evidence Ledger', eyebrow: 'Evidence' },
+  ],
+};
+
+const pipelineStepsByLang: Record<Lang, string[]> = {
+  ko: ['Input Context', 'n8n Runtime', 'Upstage Analysis', 'Execution Memory', 'Evidence Ledger', 'Next Agent Run'],
+  en: ['Input Context', 'n8n Runtime', 'Upstage Analysis', 'Execution Memory', 'Evidence Ledger', 'Next Agent Run'],
+};
+
+const workbenchCopy = {
+  ko: {
+    sidebarBody: '업무 맥락을 다음 Agent Run이 이어받을 실행 상태로 정리합니다.',
+    headerEyebrow: 'Agent Handoff Workbench',
+    headerTitle: '다음 실행자가 이어받을 기억, 증거, 다음 액션',
+    headerBody: '회의록, 고객 메모, Slack 논의, 이슈 설명, 작업 요청을 실행 가능한 Agent Run 상태로 변환합니다.',
+    waiting: '입력 대기',
+    runtimeTitle: '입력 맥락을 실행 기억으로 변환 중입니다',
+    runtimeSummary: 'n8n runtime이 Upstage 분석을 호출하고, 결과를 Execution Memory와 Evidence Ledger로 조립합니다.',
+    errorEyebrow: '오류',
+    errorTitle: 'Handoff runtime 호출이 완료되지 않았습니다',
+    unknownError: '알 수 없는 오류가 발생했습니다.',
+    errorAction: '환경변수 VITE_N8N_WEBHOOK_URL, n8n production webhook 활성화 상태, Upstage credential 연결을 확인한 뒤 다시 실행하세요.',
+    backToInput: '입력으로 돌아가기',
+    inputTitle: '다음 Agent에게 넘길 업무 맥락',
+    inputSummary: '회의에 한정하지 말고 고객 메모, Slack 논의, 이슈 설명, 작업 요청을 그대로 붙여넣으세요.',
+    inputAction: 'Handoff가 목표 상태, 사용한 맥락, 실행 요청, 증거 기록, 다음 실행으로 구조화합니다.',
+    workName: '작업 이름',
+    workNamePlaceholder: '예: 온보딩 개선 논의',
+    recipient: '수신자/대상',
+    optional: '선택',
+    requestType: '실행 요청 유형',
+    tone: '톤',
+    workContext: '업무 맥락',
+    contextPlaceholder: '회의록, 고객 메모, Slack 논의, 이슈 설명, 작업 요청을 붙여넣으세요. Handoff가 다음 Agent Run이 이어받을 실행 기억으로 정리합니다.',
+    inferredType: '입력 유형 추정',
+    creating: '실행 기억 생성 중...',
+    create: '실행 기억 만들기',
+    status: '현재 상태',
+    inputType: '입력 유형',
+    deliverables: '산출물',
+    evidenceItems: '증거 항목',
+    nextRun: '다음 실행',
+    countSuffix: '개',
+    evidence: '근거',
+    nextAction: '다음 액션',
+    goalState: '목표 상태',
+    contextUsed: '사용한 맥락',
+    executionRequests: '실행 요청',
+    evidenceLedger: '증거 기록',
+    nextExecution: '다음 실행',
+    missingContext: '누락 정보',
+    risks: '리스크',
+    draftMessage: '전달 메시지',
+    productDefinition: '제품/작업 정의',
+    implementationPrompt: '구현 프롬프트',
+    memoryToKeep: '유지할 기억',
+    nextRunItems: '다음 실행 항목',
+    continuationPrompt: '이어받기 프롬프트',
+    doneEvidence: '완료 증거',
+    missingEvidence: '누락된 증거',
+    qualityChecklist: '검증 체크리스트',
+    nextVerification: '다음 검증 단계',
+    rawResponse: '응답 원본',
+    showJson: '원본 JSON 보기',
+    hideJson: '원본 JSON 숨기기',
+    noItems: '아직 반환된 항목이 없습니다.',
+    goalEvidence: '입력 맥락에서 목표와 현재 상태를 추출했습니다.',
+    goalAction: '목표와 제약을 확인한 뒤 실행 요청으로 넘기세요.',
+    emptyContext: '사용한 맥락이 비어 있습니다.',
+    contextEvidence: '결정사항, 요구사항, 누락 정보, 리스크를 분리했습니다.',
+    contextAction: '맥락이 부족하면 입력 탭에서 자료를 보강하세요.',
+    requestAction: '다음 실행자가 처리할 작업 단위로 넘기세요.',
+    ledgerSummary: '완료 증거, 누락 증거, 품질 체크리스트를 분리했습니다.',
+    ledgerAction: '다음 검증 단계를 지정하세요.',
+    nextRunEmpty: '다음 Agent Run 프롬프트가 비어 있습니다.',
+    previousContextYes: '이전 맥락 사용 기록이 있습니다.',
+    previousContextNo: '새 입력 맥락 기준으로 실행 상태를 만들었습니다.',
+    nextRunAction: '다음 Agent에게 continuation prompt와 Evidence Ledger를 함께 넘기세요.',
+    missingContextSummary: '다음 실행 전에 보강하면 좋은 맥락입니다.',
+    risksSummary: '실행 요청에 반영해야 할 위험 요소입니다.',
+    requestDetailAction: '작업 패키지를 다음 Agent Run에 넘기세요.',
+    memorySummary: '다음 실행에서도 유지해야 할 결정, 제약, 관찰입니다.',
+    nextItemsSummary: '다음 Agent가 바로 이어서 처리할 작업입니다.',
+    previousContextLabel: '이전 맥락 사용',
+    continuationAction: '다음 Agent Run 시작 시 이 프롬프트를 함께 전달하세요.',
+    doneEvidenceSummary: '완료 판단에 사용된 근거입니다.',
+    missingEvidenceSummary: '완료 주장 전에 더 필요한 근거입니다.',
+    checklistSummary: '다음 실행자가 확인해야 할 품질 기준입니다.',
+    nextVerificationEmpty: '다음 검증 단계가 비어 있습니다.',
+    verificationAction: '검증 후 Evidence Ledger를 업데이트하세요.',
+  },
+  en: {
+    sidebarBody: 'Turn work context into runnable state your next Agent Run can inherit.',
+    headerEyebrow: 'Agent Handoff Workbench',
+    headerTitle: 'Memory, evidence, and next actions for the next executor',
+    headerBody: 'Turn transcripts, customer notes, Slack threads, issues, and requests into a runnable Agent Run state.',
+    waiting: 'Waiting for input',
+    runtimeTitle: 'Converting input context into execution memory',
+    runtimeSummary: 'The n8n runtime calls Upstage analysis, then assembles the result into Execution Memory and an Evidence Ledger.',
+    errorEyebrow: 'Error',
+    errorTitle: 'The Handoff runtime call did not complete',
+    unknownError: 'An unknown error occurred.',
+    errorAction: 'Check VITE_N8N_WEBHOOK_URL, the active n8n production webhook, and the connected Upstage credential, then run it again.',
+    backToInput: 'Back to input',
+    inputTitle: 'Work context to hand to the next Agent',
+    inputSummary: 'Paste customer notes, Slack threads, issue descriptions, work requests, or meeting notes exactly as they are.',
+    inputAction: 'Handoff structures them into Goal State, Context Used, Execution Requests, Evidence Ledger, and Next Agent Run.',
+    workName: 'Work name',
+    workNamePlaceholder: 'Example: onboarding improvement discussion',
+    recipient: 'Recipient / target',
+    optional: 'Optional',
+    requestType: 'Execution request type',
+    tone: 'Tone',
+    workContext: 'Work context',
+    contextPlaceholder: 'Paste meeting notes, customer memos, Slack threads, issue descriptions, or work requests. Handoff will turn them into execution memory your next Agent Run can inherit.',
+    inferredType: 'Inferred input type',
+    creating: 'Creating execution memory...',
+    create: 'Create execution memory',
+    status: 'Current status',
+    inputType: 'Input type',
+    deliverables: 'Deliverables',
+    evidenceItems: 'Evidence items',
+    nextRun: 'Next run',
+    countSuffix: '',
+    evidence: 'Evidence',
+    nextAction: 'Next action',
+    goalState: 'Goal State',
+    contextUsed: 'Context Used',
+    executionRequests: 'Execution Requests',
+    evidenceLedger: 'Evidence Ledger',
+    nextExecution: 'Next Agent Run',
+    missingContext: 'Missing Context',
+    risks: 'Risks',
+    draftMessage: 'Draft message',
+    productDefinition: 'Product / work definition',
+    implementationPrompt: 'Implementation prompt',
+    memoryToKeep: 'Memory to persist',
+    nextRunItems: 'Next run items',
+    continuationPrompt: 'Continuation prompt',
+    doneEvidence: 'Done evidence',
+    missingEvidence: 'Missing evidence',
+    qualityChecklist: 'Quality checklist',
+    nextVerification: 'Next verification step',
+    rawResponse: 'Raw response',
+    showJson: 'Show raw JSON',
+    hideJson: 'Hide raw JSON',
+    noItems: 'No returned items yet.',
+    goalEvidence: 'The goal and current state were extracted from the input context.',
+    goalAction: 'Review the goal and constraints, then pass them into execution requests.',
+    emptyContext: 'No context used was returned.',
+    contextEvidence: 'Decisions, requirements, missing context, and risks were separated.',
+    contextAction: 'If context is thin, enrich the input tab with more material.',
+    requestAction: 'Pass this as the unit of work for the next executor.',
+    ledgerSummary: 'Done evidence, missing evidence, and quality checks were separated.',
+    ledgerAction: 'Specify the next verification step.',
+    nextRunEmpty: 'No next Agent Run prompt was returned.',
+    previousContextYes: 'Previous context usage is recorded.',
+    previousContextNo: 'The runnable state was created from the new input context.',
+    nextRunAction: 'Hand the continuation prompt and Evidence Ledger to the next Agent.',
+    missingContextSummary: 'Context worth filling before the next execution.',
+    risksSummary: 'Risk factors that should shape the execution request.',
+    requestDetailAction: 'Pass this work package to the next Agent Run.',
+    memorySummary: 'Decisions, constraints, and observations to keep for future runs.',
+    nextItemsSummary: 'Work the next Agent should pick up immediately.',
+    previousContextLabel: 'Previous context used',
+    continuationAction: 'Pass this prompt at the start of the next Agent Run.',
+    doneEvidenceSummary: 'Evidence used to support the done claim.',
+    missingEvidenceSummary: 'Evidence still needed before claiming completion.',
+    checklistSummary: 'Quality checks the next executor should verify.',
+    nextVerificationEmpty: 'No next verification step was returned.',
+    verificationAction: 'Update the Evidence Ledger after verification.',
+  },
+} satisfies Record<Lang, Record<string, string>>;
+
+const glassPanel = 'border border-white/[0.14] bg-white/[0.075] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),inset_0_-1px_0_rgba(255,255,255,0.04),0_18px_70px_rgba(0,0,0,0.30)] backdrop-blur-2xl';
+const glassField = 'border border-white/[0.13] bg-white/[0.075] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl';
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function asString(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return fallback;
+}
+
+function asBoolean(value: unknown): boolean {
+  return value === true || value === 'true' || value === 'yes';
+}
+
+function asStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((item) => asString(item)).filter(Boolean);
+  if (typeof value === 'string' && value.trim()) {
+    return value
+      .split(/\n|;|,/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function normalizeResponse(raw: unknown): HandoffResponse {
+  const root = asRecord(raw);
+  const meetingUnderstanding = asRecord(root.meetingUnderstanding);
+  const deliverablePack = asRecord(root.deliverablePack);
+  const executionMemory = asRecord(root.executionMemory);
+  const harness = asRecord(root.harness);
+
+  return {
+    success: typeof root.success === 'boolean' ? root.success : undefined,
+    meetingUnderstanding: {
+      goal: asString(meetingUnderstanding.goal, asString(root.summary, '아직 목표 상태가 반환되지 않았습니다.')),
+      customerContext: asString(meetingUnderstanding.customerContext, asString(root.customer_context)),
+      keyDecisions: asStringArray(meetingUnderstanding.keyDecisions || root.key_decisions),
+      requirements: asStringArray(meetingUnderstanding.requirements || root.requirements),
+      missingInfo: asStringArray(meetingUnderstanding.missingInfo || root.missing_info || root.next_questions),
+      risks: asStringArray(meetingUnderstanding.risks || root.risks),
+    },
+    deliverablePack: {
+      type: asString(deliverablePack.type, asString(root.deliveryType, 'unknown')),
+      title: asString(deliverablePack.title, 'Generated Execution Request'),
+      customerMessage: asString(deliverablePack.customerMessage, asString(root.follow_up_email || root.customer_message)),
+      brief: asString(deliverablePack.brief, asString(root.proposal_outline || root.brief)),
+      lovablePrompt: asString(deliverablePack.lovablePrompt || root.lovable_prompt),
+      prd: asString(deliverablePack.prd || root.prd),
+      tasks: asStringArray(deliverablePack.tasks || root.tasks),
+    },
+    executionMemory: {
+      previousContextUsed: asBoolean(executionMemory.previousContextUsed || root.previous_context_used),
+      nextActions: asStringArray(executionMemory.nextActions || root.next_actions || root.tasks),
+      memoryToPersist: asStringArray(executionMemory.memoryToPersist || root.memory_observations || root.memory_to_persist),
+      continuationPrompt: asString(executionMemory.continuationPrompt, asString(root.continuation_prompt)),
+    },
+    harness: {
+      doneEvidence: asStringArray(harness.doneEvidence || root.done_evidence),
+      missingEvidence: asStringArray(harness.missingEvidence || root.missing_evidence || root.next_questions),
+      qualityChecklist: asStringArray(harness.qualityChecklist || root.quality_checklist),
+      nextVerificationStep: asString(harness.nextVerificationStep, asString(root.next_verification_step)),
+    },
+    _warnings: asStringArray(root._warnings),
+    _error: root._error === null ? null : (asRecord(root._error) as HandoffResponse['_error']),
+    _raw: root._raw,
+  };
+}
+
+function StatusBadge({ children, tone = 'neutral' }: { children: string; tone?: 'neutral' | 'good' | 'warn' | 'error' }) {
+  const className = {
+    neutral: 'border-white/[0.12] bg-white/[0.055] text-[#a8b2c4] backdrop-blur-xl',
+    good: 'border-white/[0.18] bg-white/[0.08] text-[#f4efe4] backdrop-blur-xl',
+    warn: 'border-[#c9a86a]/[0.30] bg-[#c9a86a]/[0.10] text-[#ead7aa] backdrop-blur-xl',
+    error: 'border-red-500/30 bg-red-500/10 text-red-200',
+  }[tone];
+
+  return <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${className}`}>{children}</span>;
+}
+
+function EmptyState({ label = '아직 반환된 항목이 없습니다.' }: { label?: string }) {
+  return <p className="rounded-md border border-dashed border-white/[0.12] bg-white/[0.035] px-3 py-2 text-sm text-[#7d8798] backdrop-blur-xl">{label}</p>;
+}
+
+function ListBlock({ items, tone = 'neutral' }: { items?: string[]; tone?: 'neutral' | 'good' | 'warn' }) {
+  if (!items?.length) return <EmptyState />;
+  const toneClass = tone === 'good'
+    ? 'border-white/[0.16] bg-white/[0.07]'
+    : tone === 'warn'
+      ? 'border-[#c9a86a]/[0.25] bg-[#c9a86a]/[0.08]'
+      : 'border-white/[0.12] bg-white/[0.04]';
+
+  return (
+    <ul className="space-y-2 text-sm text-[#d9deea]">
+      {items.map((item, index) => (
+        <li key={`${item}-${index}`} className={`rounded-md border px-3 py-2 leading-relaxed ${toneClass}`}>
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function WorkbenchCard({
+  eyebrow,
+  title,
+  summary,
+  evidence,
+  action,
+  status = 'Ready',
+  labels,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  summary?: string;
+  evidence?: string;
+  action?: string;
+  status?: string;
+  labels?: { evidence: string; nextAction: string };
+  children?: ReactNode;
+}) {
+  const cardLabels = labels ?? { evidence: '근거', nextAction: '다음 액션' };
+
+  return (
+    <article className={`rounded-xl p-5 ${glassPanel}`}>
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7d8798]">{eyebrow}</p>
+          <h3 className="mt-1 text-lg font-semibold text-[#f6f4ee]">{title}</h3>
+        </div>
+        <StatusBadge tone={status === 'Needs evidence' ? 'warn' : 'good'}>{status}</StatusBadge>
+      </div>
+      {summary && <p className="mb-4 text-sm leading-6 text-[#c7cfdd]">{summary}</p>}
+      {children}
+      {(evidence || action) && (
+        <div className="mt-4 grid gap-3 border-t border-white/10 pt-4 md:grid-cols-2">
+          {evidence && (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#7d8798]">{cardLabels.evidence}</p>
+              <p className="text-sm text-[#c7cfdd]">{evidence}</p>
+            </div>
+          )}
+          {action && (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#7d8798]">{cardLabels.nextAction}</p>
+              <p className="text-sm text-[#c7cfdd]">{action}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function DebugPanel({
+  loading,
+  error,
+  rawResult,
+  result,
+  onTest,
+}: {
+  loading: boolean;
+  error: string | null;
+  rawResult: unknown;
+  result: HandoffResponse | null;
+  onTest: () => Promise<void>;
+}) {
+  const root = asRecord(rawResult);
+  const responseError = result?._error;
+  const warnings = result?._warnings ?? [];
+  const success = typeof result?.success === 'boolean' ? result.success : rawResult ? !error : undefined;
+
+  return (
+    <aside className={`fixed bottom-4 right-4 z-50 hidden w-[min(24rem,calc(100vw-2rem))] rounded-xl p-4 text-xs text-[#d9deea] lg:block ${glassPanel}`}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold text-[#f6f4ee]">Webhook Debug</p>
+          <p className="mt-1 truncate text-[#7d8798]">{import.meta.env.VITE_N8N_WEBHOOK_URL || 'No webhook URL'}</p>
+        </div>
+        <StatusBadge tone={loading ? 'neutral' : success ? 'good' : success === false || error ? 'error' : 'neutral'}>
+          {loading ? 'loading' : success === undefined ? 'idle' : success ? 'success' : 'failed'}
+        </StatusBadge>
+      </div>
+
+      <div className="grid gap-2">
+        <div className="flex items-center justify-between rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 backdrop-blur-xl">
+          <span className="text-[#a8b2c4]">previousContextUsed</span>
+          <span className="font-medium">{result?.executionMemory.previousContextUsed ? 'true' : 'false'}</span>
+        </div>
+
+        {warnings.length > 0 && (
+          <div className="rounded-md border border-amber-400/30 bg-amber-400/10 p-3 text-amber-100">
+            <p className="mb-1 font-semibold">Warnings</p>
+            <ul className="space-y-1">
+              {warnings.map((warning) => <li key={warning}>{warning}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {(error || responseError) && (
+          <div className="rounded-md border border-red-400/30 bg-red-400/10 p-3 text-red-100">
+            <p className="mb-1 font-semibold">{responseError?.code || 'REQUEST_FAILED'}</p>
+            <p>{responseError?.message || error}</p>
+            {responseError?.preview && <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-red-950/60 p-2">{responseError.preview}</pre>}
+          </div>
+        )}
+
+        <p className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-[#7d8798] backdrop-blur-xl">{root._raw ? 'raw payload included' : 'no raw payload'}</p>
+        <button className="rounded-md border border-white/10 px-3 py-2 font-semibold text-[#e8edf6] hover:bg-white/[0.06] disabled:opacity-50" onClick={onTest} disabled={loading}>
+          웹훅 연결 테스트
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function classifyInputType(text: string): 'Meeting' | 'Memo' | 'Issue' | 'Request' {
+  const lower = text.toLowerCase();
+  if (/github|issue|bug|ticket|이슈|버그/.test(lower)) return 'Issue';
+  if (/요청|request|todo|task|작업/.test(lower)) return 'Request';
+  if (/memo|note|메모|논의|slack/.test(lower)) return 'Memo';
+  return 'Meeting';
+}
+
+export function HandoffDemo({ showDebugPanel = true, lang = 'ko' }: { showDebugPanel?: boolean; lang?: Lang }) {
+  const [meetingTitle, setMeetingTitle] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [deliveryType, setDeliveryType] = useState<HandoffRequest['deliveryType']>('website_brief');
+  const [tone, setTone] = useState<HandoffRequest['tone']>('professional');
+  const [transcript, setTranscript] = useState('');
+  const [activeView, setActiveView] = useState<WorkbenchView>('input');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rawResult, setRawResult] = useState<unknown>(null);
+  const [showJson, setShowJson] = useState(false);
+  const t = workbenchCopy[lang];
+  const deliveryOptions = deliveryOptionsByLang[lang];
+  const navItems = navItemsByLang[lang];
+  const pipelineSteps = pipelineStepsByLang[lang];
+  const cardLabels = { evidence: t.evidence, nextAction: t.nextAction };
+
+  const result = useMemo(() => (rawResult ? normalizeResponse(rawResult) : null), [rawResult]);
+  const canSubmit = meetingTitle.trim().length > 0 && transcript.trim().length > 0;
+  const inputType = classifyInputType(transcript);
+
+  const metrics = useMemo(() => {
+    const deliverableCount = [
+      result?.deliverablePack.customerMessage,
+      result?.deliverablePack.brief,
+      result?.deliverablePack.lovablePrompt,
+      result?.deliverablePack.prd,
+      ...(result?.deliverablePack.tasks ?? []),
+    ].filter(Boolean).length;
+    const evidenceCount = (result?.harness.doneEvidence.length ?? 0) + (result?.harness.missingEvidence.length ?? 0) + (result?.harness.qualityChecklist.length ?? 0);
+    const nextRunCount = result?.executionMemory.nextActions.length ?? 0;
+    return { deliverableCount, evidenceCount, nextRunCount };
+  }, [result]);
+
+  async function runHandoff(payload?: Partial<HandoffRequest>) {
+    const request = {
+      meetingTitle: payload?.meetingTitle ?? meetingTitle,
+      transcript: payload?.transcript ?? transcript,
+      deliveryType: payload?.deliveryType ?? deliveryType,
+      recipient: payload?.recipient ?? recipient,
+      tone: payload?.tone ?? tone,
+    };
+
+    setLoading(true);
+    setError(null);
+    setActiveView('loading');
+    try {
+      const response = await callN8n(request);
+      setRawResult(response);
+      setActiveView('dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.unknownError);
+      setActiveView('error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSubmit() {
+    if (!canSubmit) return;
+    await runHandoff();
+  }
+
+  async function handleWebhookTest() {
+    setMeetingTitle((value) => value || 'Webhook 연결 테스트');
+    await runHandoff({
+      meetingTitle: lang === 'en' ? 'Webhook connection test' : 'Webhook 연결 테스트',
+      transcript: lang === 'en'
+        ? 'This is a ping request from the debug panel. Verify success, warnings, error, and previousContextUsed are displayed correctly.'
+        : '디버그 패널에서 보낸 ping 요청입니다. success, warnings, error, previousContextUsed 표시가 정상인지 확인해주세요.',
+      recipient: recipient || 'Debug Panel',
+    });
+  }
+
+  const shell = (content: ReactNode) => (
+    <main className="min-h-screen bg-[#030407] bg-[radial-gradient(circle_at_16%_10%,rgba(255,255,255,0.08),transparent_22%),radial-gradient(circle_at_86%_8%,rgba(143,179,255,0.08),transparent_28%),linear-gradient(180deg,#030407,#05070b)] text-[#f6f4ee]">
+      {showDebugPanel && <DebugPanel loading={loading} error={error} rawResult={rawResult} result={result} onTest={handleWebhookTest} />}
+      <div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[17rem_1fr]">
+        <aside className="border-b border-white/[0.12] bg-white/[0.035] p-5 shadow-[inset_-1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-2xl lg:border-b-0 lg:border-r">
+          <div className="mb-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#7d8798]">Handoff</p>
+            <h1 className="mt-2 text-xl font-semibold text-[#f6f4ee]">Execution Memory Workbench</h1>
+            <p className="mt-2 text-sm leading-6 text-[#a8b2c4]">{t.sidebarBody}</p>
+          </div>
+          <nav className="grid gap-1">
+            {navItems.map((item) => {
+              const disabled = !result && !['input'].includes(item.id);
+              const selected = activeView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  className={`rounded-md border px-3 py-2 text-left transition ${selected ? 'border-white/[0.12] bg-white/[0.09] text-[#f6f4ee] shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]' : 'border-transparent text-[#a8b2c4] hover:border-white/10 hover:bg-white/[0.05] hover:text-[#e8edf6]'} ${disabled ? 'cursor-not-allowed opacity-40' : ''}`}
+                  disabled={disabled}
+                  onClick={() => setActiveView(item.id)}
+                >
+                  <span className="block text-sm font-medium">{item.label}</span>
+                  <span className="block text-xs text-[#7d8798]">{item.eyebrow}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+        <section className="min-w-0 p-5 sm:p-8">
+          <header className="mb-6 flex flex-col justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.035] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl xl:flex-row xl:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">{t.headerEyebrow}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-[#f6f4ee] sm:text-3xl">{t.headerTitle}</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-[#a8b2c4]">
+                {t.headerBody}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <StatusBadge tone={result ? 'good' : 'neutral'}>{result ? 'Ready for Handoff' : t.waiting}</StatusBadge>
+              <StatusBadge>{inputType}</StatusBadge>
+            </div>
+          </header>
+          {content}
+        </section>
+      </div>
+    </main>
+  );
+
+  if (activeView === 'loading') {
+    return shell(
+      <div className="grid gap-6">
+        <WorkbenchCard
+          eyebrow="Runtime Pipeline"
+          title={t.runtimeTitle}
+          summary={t.runtimeSummary}
+          status="Running"
+          labels={cardLabels}
+        >
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {pipelineSteps.map((step, index) => (
+              <div key={step} className={`rounded-lg p-4 ${glassField}`}>
+                <p className="text-xs font-semibold text-[#d7dceb]">0{index + 1}</p>
+                <p className="mt-2 font-medium text-[#e8edf6]">{step}</p>
+                <div className="mt-4 h-1 rounded-full bg-white/10">
+                  <div className="h-1 animate-pulse rounded-full bg-[#f4efe4]" style={{ width: `${Math.min(100, (index + 1) * 16)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </WorkbenchCard>
+      </div>,
+    );
+  }
+
+  if (activeView === 'error') {
+    return shell(
+      <WorkbenchCard
+        eyebrow={t.errorEyebrow}
+        title={t.errorTitle}
+        summary={error || t.unknownError}
+        action={t.errorAction}
+        status="Needs evidence"
+        labels={cardLabels}
+      >
+        <button className="rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-[#e8edf6] hover:bg-white/[0.06]" onClick={() => setActiveView('input')}>
+          {t.backToInput}
+        </button>
+      </WorkbenchCard>,
+    );
+  }
+
+  if (!result || activeView === 'input') {
+    return shell(
+      <div className="grid gap-5">
+        <WorkbenchCard
+          eyebrow="Input Context"
+          title={t.inputTitle}
+          summary={t.inputSummary}
+          action={t.inputAction}
+          labels={cardLabels}
+        >
+          <div className="grid gap-4 md:grid-cols-4">
+            <label className="grid gap-2">
+              <span className="text-xs font-medium text-[#a8b2c4]">{t.workName}</span>
+              <input className={`rounded-md p-3 text-sm text-[#e8edf6] outline-none focus:border-[#f4efe4]/[0.55] ${glassField}`} value={meetingTitle} onChange={(e) => setMeetingTitle(e.target.value)} placeholder={t.workNamePlaceholder} />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-xs font-medium text-[#a8b2c4]">{t.recipient}</span>
+              <input className={`rounded-md p-3 text-sm text-[#e8edf6] outline-none focus:border-[#f4efe4]/[0.55] ${glassField}`} value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder={t.optional} />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-xs font-medium text-[#a8b2c4]">{t.requestType}</span>
+              <select className={`rounded-md p-3 text-sm text-[#e8edf6] outline-none focus:border-[#f4efe4]/[0.55] ${glassField}`} value={deliveryType} onChange={(e) => setDeliveryType(e.target.value as HandoffRequest['deliveryType'])}>
+                {deliveryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-2">
+              <span className="text-xs font-medium text-[#a8b2c4]">{t.tone}</span>
+              <select className={`rounded-md p-3 text-sm text-[#e8edf6] outline-none focus:border-[#f4efe4]/[0.55] ${glassField}`} value={tone} onChange={(e) => setTone(e.target.value as HandoffRequest['tone'])}>
+                <option value="professional">Professional</option>
+                <option value="friendly">Friendly</option>
+                <option value="direct">Direct</option>
+              </select>
+            </label>
+          </div>
+          <label className="mt-4 grid gap-2">
+            <span className="text-xs font-medium text-[#a8b2c4]">{t.workContext}</span>
+            <textarea
+              className={`min-h-72 rounded-md p-4 text-sm leading-6 text-[#e8edf6] outline-none focus:border-[#f4efe4]/[0.55] ${glassField}`}
+              value={transcript}
+              onChange={(e) => setTranscript(e.target.value)}
+              placeholder={t.contextPlaceholder}
+            />
+          </label>
+          <div className="mt-4 flex flex-col justify-between gap-3 border-t border-white/10 pt-4 sm:flex-row sm:items-center">
+            <p className="text-sm text-[#7d8798]">{t.inferredType}: <span className="text-[#c7cfdd]">{inputType}</span></p>
+            <button className="rounded-md border border-white/40 bg-white/90 px-5 py-3 text-sm font-bold text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_12px_32px_rgba(0,0,0,0.22)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-40" onClick={handleSubmit} disabled={loading || !canSubmit}>
+              {loading ? t.creating : t.create}
+            </button>
+          </div>
+        </WorkbenchCard>
+      </div>,
+    );
+  }
+
+  const summaryStrip = (
+    <div className="mb-5 grid gap-3 md:grid-cols-5">
+      {[
+        [t.status, 'Ready for Handoff'],
+        [t.inputType, inputType],
+        [t.deliverables, `${metrics.deliverableCount}${t.countSuffix}`],
+        [t.evidenceItems, `${metrics.evidenceCount}${t.countSuffix}`],
+        [t.nextRun, `${metrics.nextRunCount}${t.countSuffix}`],
+      ].map(([label, value]) => (
+        <div key={label} className={`rounded-lg p-4 ${glassField}`}>
+          <p className="text-xs font-medium text-[#7d8798]">{label}</p>
+          <p className="mt-1 text-sm font-semibold text-[#e8edf6]">{value}</p>
+        </div>
+      ))}
+    </div>
+  );
+
+  const dashboard = (
+    <>
+      {summaryStrip}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <WorkbenchCard eyebrow="Goal State" title={t.goalState} summary={result.meetingUnderstanding.goal} evidence={result.meetingUnderstanding.customerContext || t.goalEvidence} action={t.goalAction} labels={cardLabels}>
+          <ListBlock items={result.meetingUnderstanding.requirements.slice(0, 3)} />
+        </WorkbenchCard>
+        <WorkbenchCard eyebrow="Context Used" title={t.contextUsed} summary={result.meetingUnderstanding.customerContext || t.emptyContext} evidence={t.contextEvidence} action={t.contextAction} labels={cardLabels}>
+          <ListBlock items={[...result.meetingUnderstanding.keyDecisions, ...result.meetingUnderstanding.missingInfo].slice(0, 4)} />
+        </WorkbenchCard>
+        <WorkbenchCard eyebrow="Execution Requests" title={t.executionRequests} summary={result.deliverablePack.title} evidence={result.deliverablePack.brief || result.deliverablePack.customerMessage} action={t.requestAction} labels={cardLabels}>
+          <ListBlock items={result.deliverablePack.tasks.slice(0, 4)} />
+        </WorkbenchCard>
+        <WorkbenchCard eyebrow="Evidence Ledger" title={t.evidenceLedger} summary={t.ledgerSummary} evidence={`${result.harness.doneEvidence.length}${t.countSuffix} ${t.doneEvidence}, ${result.harness.missingEvidence.length}${t.countSuffix} ${t.missingEvidence}`} action={result.harness.nextVerificationStep || t.ledgerAction} status={result.harness.missingEvidence.length > 0 ? 'Needs evidence' : 'Ready'} labels={cardLabels}>
+          <ListBlock items={[...result.harness.doneEvidence, ...result.harness.missingEvidence].slice(0, 4)} tone={result.harness.missingEvidence.length > 0 ? 'warn' : 'good'} />
+        </WorkbenchCard>
+        <div className="xl:col-span-2">
+          <WorkbenchCard eyebrow="Next Agent Run" title={t.nextExecution} summary={result.executionMemory.continuationPrompt || t.nextRunEmpty} evidence={result.executionMemory.previousContextUsed ? t.previousContextYes : t.previousContextNo} action={t.nextRunAction} labels={cardLabels}>
+            <ListBlock items={result.executionMemory.nextActions} />
+          </WorkbenchCard>
+        </div>
+      </div>
+    </>
+  );
+
+  const detailViews: Record<WorkbenchView, ReactNode> = {
+    input: null,
+    loading: null,
+    error: null,
+    dashboard,
+    meeting: (
+      <>
+        {summaryStrip}
+        <div className="grid gap-4 xl:grid-cols-2">
+          <WorkbenchCard eyebrow="Goal State" title={t.goalState} summary={result.meetingUnderstanding.goal} status="Ready" labels={cardLabels}>
+            <ListBlock items={result.meetingUnderstanding.requirements} />
+          </WorkbenchCard>
+          <WorkbenchCard eyebrow="Context Used" title={t.contextUsed} summary={result.meetingUnderstanding.customerContext} status="Ready" labels={cardLabels}>
+            <ListBlock items={result.meetingUnderstanding.keyDecisions} />
+          </WorkbenchCard>
+          <WorkbenchCard eyebrow="Missing Context" title={t.missingContext} summary={t.missingContextSummary} status="Needs evidence" labels={cardLabels}>
+            <ListBlock items={result.meetingUnderstanding.missingInfo} tone="warn" />
+          </WorkbenchCard>
+          <WorkbenchCard eyebrow="Risks" title={t.risks} summary={t.risksSummary} status={result.meetingUnderstanding.risks.length ? 'Needs evidence' : 'Ready'} labels={cardLabels}>
+            <ListBlock items={result.meetingUnderstanding.risks} tone="warn" />
+          </WorkbenchCard>
+        </div>
+      </>
+    ),
+    delivery: (
+      <>
+        {summaryStrip}
+        <div className="grid gap-4">
+          <WorkbenchCard eyebrow="Execution Request" title={result.deliverablePack.title} summary={result.deliverablePack.brief || result.deliverablePack.customerMessage} action={t.requestDetailAction} labels={cardLabels}>
+            <ListBlock items={result.deliverablePack.tasks} />
+          </WorkbenchCard>
+          {result.deliverablePack.customerMessage && <WorkbenchCard eyebrow="Draft" title={t.draftMessage} summary={result.deliverablePack.customerMessage} labels={cardLabels} />}
+          {result.deliverablePack.prd && <WorkbenchCard eyebrow="PRD" title={t.productDefinition} summary={result.deliverablePack.prd} labels={cardLabels} />}
+          {result.deliverablePack.lovablePrompt && <WorkbenchCard eyebrow="Prompt" title={t.implementationPrompt} summary={result.deliverablePack.lovablePrompt} labels={cardLabels} />}
+        </div>
+      </>
+    ),
+    memory: (
+      <>
+        {summaryStrip}
+        <div className="grid gap-4 xl:grid-cols-2">
+          <WorkbenchCard eyebrow="Execution Memory" title={t.memoryToKeep} summary={t.memorySummary} status="Ready" labels={cardLabels}>
+            <ListBlock items={result.executionMemory.memoryToPersist} />
+          </WorkbenchCard>
+          <WorkbenchCard eyebrow="Next Agent Run" title={t.nextRunItems} summary={t.nextItemsSummary} status="Ready" labels={cardLabels}>
+            <ListBlock items={result.executionMemory.nextActions} />
+          </WorkbenchCard>
+          <div className="xl:col-span-2">
+            <WorkbenchCard eyebrow="Continuation Prompt" title={t.continuationPrompt} summary={result.executionMemory.continuationPrompt} evidence={`${t.previousContextLabel}: ${result.executionMemory.previousContextUsed ? 'yes' : 'no'}`} action={t.continuationAction} labels={cardLabels} />
+          </div>
+        </div>
+      </>
+    ),
+    evidence: (
+      <>
+        {summaryStrip}
+        <div className="grid gap-4 xl:grid-cols-2">
+          <WorkbenchCard eyebrow="Done Evidence" title={t.doneEvidence} summary={t.doneEvidenceSummary} status="Ready" labels={cardLabels}>
+            <ListBlock items={result.harness.doneEvidence} tone="good" />
+          </WorkbenchCard>
+          <WorkbenchCard eyebrow="Missing Evidence" title={t.missingEvidence} summary={t.missingEvidenceSummary} status={result.harness.missingEvidence.length ? 'Needs evidence' : 'Ready'} labels={cardLabels}>
+            <ListBlock items={result.harness.missingEvidence} tone="warn" />
+          </WorkbenchCard>
+          <WorkbenchCard eyebrow="Quality Checklist" title={t.qualityChecklist} summary={t.checklistSummary} labels={cardLabels}>
+            <ListBlock items={result.harness.qualityChecklist} />
+          </WorkbenchCard>
+          <WorkbenchCard eyebrow="Next Verification" title={t.nextVerification} summary={result.harness.nextVerificationStep || t.nextVerificationEmpty} action={t.verificationAction} labels={cardLabels} />
+        </div>
+        <article className={`mt-4 rounded-xl p-5 ${glassPanel}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7d8798]">Raw JSON</p>
+              <h3 className="mt-1 text-lg font-semibold text-[#f6f4ee]">{t.rawResponse}</h3>
+            </div>
+            <button className="rounded-md border border-white/[0.12] bg-white/[0.04] px-3 py-2 text-sm text-[#d9deea] backdrop-blur-xl hover:bg-white/[0.07]" onClick={() => setShowJson((value) => !value)}>
+              {showJson ? t.hideJson : t.showJson}
+            </button>
+          </div>
+          {showJson && <pre className="mt-4 max-h-96 overflow-auto rounded-md bg-[#05070b] p-4 text-xs text-[#d9deea]">{JSON.stringify(rawResult, null, 2)}</pre>}
+        </article>
+      </>
+    ),
+  };
+
+  return shell(detailViews[activeView] ?? dashboard);
+}
+
+export default HandoffDemo;
