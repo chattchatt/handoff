@@ -4,8 +4,8 @@ import HeroMemoryScene from '@/components/HeroMemoryScene';
 
 type Lang = 'ko' | 'en';
 
-const GITHUB_URL = 'https://github.com/chattchatt/view-capture-match-73c6fe6b';
-const CLONE_COMMAND = 'git clone https://github.com/chattchatt/view-capture-match-73c6fe6b.git';
+const GITHUB_URL = 'https://github.com/chattchatt/handoff';
+const CLONE_COMMAND = 'git clone https://github.com/chattchatt/handoff.git';
 
 const copy = {
   ko: {
