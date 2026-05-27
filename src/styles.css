@@ -52,6 +52,15 @@
 }
 
 :root {
+  /* HandOff Spec tokens (HOFF-P0-11) */
+  --hoff-bg: #1A1F31;
+  --hoff-gray-90: #2C3131;
+  --hoff-info-50: #5D7EEB;
+  --hoff-info-30: #7D98EE;
+  --hoff-info-10: #BAC8F4;
+  --hoff-danger-50: #EE684E;
+  --hoff-white: #FFFFFF;
+
   --background: oklch(0.16 0.008 270);
   --foreground: oklch(0.96 0.005 270);
 
