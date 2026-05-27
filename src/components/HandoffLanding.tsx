@@ -32,6 +32,7 @@ const copy = {
     workbenchCta: "Workbench",
     quickstart: "고급 사용자용 CLI",
     terminalHint: "CLI가 필요한 팀은 아래 명령으로 로컬 실행면을 준비할 수 있습니다.",
+    cliRepoHint: "전체 README와 환경 변수, 배포 가이드는 GitHub 저장소에서 확인하세요.",
     install: "Install",
     configure: "Configure",
     run: "Run",
@@ -81,6 +82,7 @@ const copy = {
     workbenchCta: "Workbench",
     quickstart: "Advanced CLI",
     terminalHint: "Teams that need the CLI can prepare the local runtime with these commands.",
+    cliRepoHint: "Full README, env vars, and deploy guide live in the GitHub repository.",
     install: "Install",
     configure: "Configure",
     run: "Run",
@@ -110,8 +112,8 @@ const copy = {
 
 const commands = [
   ["install", CLONE_COMMAND],
-  ["configure", "cd handoff && handoff setup"],
-  ["run", "handoff run ./meeting.md"],
+  ["configure", "cd handoff && npm install"],
+  ["run", "npm run dev  # 실행 후 http://127.0.0.1:8080"],
 ] as const;
 
 const ALL_COMMANDS = commands.map(([, command]) => command).join("\n");
@@ -374,6 +376,15 @@ function CliQuickstart({
         {commands.map(([key, command]) => (
           <CommandRow key={key} label={text[key] as string} command={command} lang={lang} />
         ))}
+        <div className="flex flex-col gap-2 border-t border-white/10 bg-white/[0.015] px-4 py-3 text-xs text-[#8f98aa] sm:flex-row sm:items-center sm:justify-between">
+          <span>{text.cliRepoHint as string}</span>
+          <a
+            href={GITHUB_URL}
+            className="inline-flex w-fit items-center gap-1 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1 font-semibold text-[#e8edf6] transition hover:bg-white/[0.10] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+          >
+            {text.openGithub as string}
+          </a>
+        </div>
       </div>
     </div>
   );

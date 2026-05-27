@@ -18,8 +18,12 @@ type HistoryItem = {
   inputType: string;
   deliveryLabel: string;
   summary: string;
+  response?: HandoffResponse;
+  meetingTitle?: string;
+  recipient?: string;
+  transcript?: string;
 };
-const HISTORY_KEY = "handoff.executionHistory.v1";
+const HISTORY_KEY = "handoff.executionHistory.v2";
 type Lang = "ko" | "en";
 
 const deliveryOptionsByLang: Record<
@@ -122,12 +126,19 @@ const workbenchCopy = {
     workContext: "업무 맥락",
     fileUpload: "문서 업로드",
     fileHint:
-      ".txt, .pdf 파일을 우선 지원합니다. PDF는 브라우저에서 본문 텍스트를 추출해 업무 맥락에 추가하고, .md도 동일하게 본문에 자동 추가됩니다.",
+      ".txt, .pdf 파일을 우선 지원합니다. PDF·DOCX·XLSX는 브라우저에서 본문을 추출해 업무 맥락에 추가하고, .md도 동일하게 자동 추가됩니다. HWP는 파일명만 기록됩니다.",
     fileLoaded: "파일 내용을 업무 맥락에 추가했습니다.",
     pdfExtracted: "PDF에서 본문 {count}자를 업무 맥락에 추가했습니다.",
     pdfExtractFailed:
       "PDF 본문 추출에 실패했습니다. 파일명만 맥락에 추가했습니다. 텍스트 기반이 아닌 스캔 PDF일 수 있습니다.",
-    unsupportedFile: "지원 형식은 TXT, MD, PDF입니다.",
+    docxExtracted: "DOCX에서 본문 {count}자를 업무 맥락에 추가했습니다.",
+    docxExtractFailed:
+      "DOCX 본문 추출에 실패했습니다. 파일이 손상되었거나 호환되지 않는 형식일 수 있습니다.",
+    xlsxExtracted: "Excel 시트 {count}자를 CSV 형식으로 업무 맥락에 추가했습니다.",
+    xlsxExtractFailed: "Excel 파일 처리에 실패했습니다. .xlsx 또는 .xls 형식만 지원합니다.",
+    hwpUnsupported:
+      "HWP/HWPX 본문 추출은 현재 미지원입니다. 파일명만 맥락에 추가했습니다. .docx 또는 .pdf로 변환해 다시 업로드해주세요.",
+    unsupportedFile: "지원 형식은 TXT, MD, PDF, DOCX, XLSX입니다 (HWP는 파일명만 기록).",
     selectedFile: "선택 파일",
     contextPlaceholder:
       "회의록, 고객 메모, Slack 논의, 이슈 설명, 작업 요청을 붙여넣으세요. Handoff가 다음 Agent Run이 이어받을 실행 기억으로 정리합니다.",
@@ -172,8 +183,12 @@ const workbenchCopy = {
     savePdf: "PDF 저장",
     newMemory: "새 기억 만들기",
     historyTitle: "최근 실행 기억",
-    historySummary: "이 브라우저에서 생성한 최근 HandOff 실행 기억입니다.",
+    historySummary:
+      "이 브라우저에서 생성한 최근 HandOff 실행 기억입니다. 최대 12개까지 저장됩니다.",
     historyEmpty: "아직 저장된 실행 기억이 없습니다.",
+    historyReopen: "다시 보기",
+    historyDelete: "삭제",
+    historyClearAll: "전체 비우기",
     rawResponse: "응답 원본",
     showJson: "원본 JSON 보기",
     hideJson: "원본 JSON 숨기기",
@@ -233,12 +248,19 @@ const workbenchCopy = {
     workContext: "Work context",
     fileUpload: "Document upload",
     fileHint:
-      ".txt and .pdf are the supported priority formats. PDF text is extracted in the browser and appended to the work context; .md is appended the same way.",
+      ".txt and .pdf are the priority formats. PDF/DOCX/XLSX text is extracted in the browser and appended to the work context; .md is appended the same way. HWP records filename only.",
     fileLoaded: "File content was added to the work context.",
     pdfExtracted: "Extracted {count} characters from PDF into the work context.",
     pdfExtractFailed:
       "Could not extract PDF text. Only the filename was added — the file may be a scanned (non-text) PDF.",
-    unsupportedFile: "Supported formats are TXT, MD, and PDF.",
+    docxExtracted: "Extracted {count} characters from DOCX into the work context.",
+    docxExtractFailed:
+      "Could not extract DOCX text. The file may be corrupt or in an incompatible format.",
+    xlsxExtracted: "Added {count} characters from the Excel sheet as CSV to the work context.",
+    xlsxExtractFailed: "Could not process the Excel file. Only .xlsx or .xls is supported.",
+    hwpUnsupported:
+      "HWP/HWPX text extraction is not supported yet. Only the filename was added — please convert to .docx or .pdf and re-upload.",
+    unsupportedFile: "Supported formats: TXT, MD, PDF, DOCX, XLSX (HWP records filename only).",
     selectedFile: "Selected file",
     contextPlaceholder:
       "Paste meeting notes, customer memos, Slack threads, issue descriptions, or work requests. Handoff will turn them into execution memory your next Agent Run can inherit.",
@@ -283,8 +305,11 @@ const workbenchCopy = {
     savePdf: "Save PDF",
     newMemory: "New memory",
     historyTitle: "Recent execution memories",
-    historySummary: "Recent HandOff execution memories created in this browser.",
+    historySummary: "Recent HandOff execution memories created in this browser (max 12 stored).",
     historyEmpty: "No saved execution memories yet.",
+    historyReopen: "Reopen",
+    historyDelete: "Delete",
+    historyClearAll: "Clear all",
     rawResponse: "Raw response",
     showJson: "Show raw JSON",
     hideJson: "Hide raw JSON",
@@ -492,6 +517,28 @@ async function extractPdfText(file: File): Promise<string> {
   return parts.filter(Boolean).join("\n\n");
 }
 
+async function extractDocxText(file: File): Promise<string> {
+  const mammoth = await import("mammoth/mammoth.browser");
+  const buffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+  return (result.value || "").trim();
+}
+
+async function extractXlsxText(file: File): Promise<string> {
+  const xlsx = await import("xlsx");
+  const buffer = await file.arrayBuffer();
+  const workbook = xlsx.read(buffer, { type: "array" });
+  const parts: string[] = [];
+  for (const name of workbook.SheetNames) {
+    const sheet = workbook.Sheets[name];
+    const csv = xlsx.utils.sheet_to_csv(sheet);
+    if (csv.trim().length) {
+      parts.push(`## ${name}\n${csv.trim()}`);
+    }
+  }
+  return parts.join("\n\n").trim();
+}
+
 async function copyText(value: string) {
   if (navigator.clipboard?.writeText) {
     try {
@@ -520,7 +567,7 @@ async function copyText(value: string) {
 
 function saveHistory(items: HistoryItem[]) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, 8)));
+  window.localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, 12)));
 }
 
 function readHistory(): HistoryItem[] {
@@ -894,9 +941,13 @@ export function HandoffDemo({
           inputType: classifyInputType(request.transcript),
           deliveryLabel: getDeliveryLabel(lang, request.deliveryType),
           summary: normalized.meetingUnderstanding.goal || normalized.deliverablePack.brief,
+          response: normalized,
+          meetingTitle: request.meetingTitle,
+          recipient: request.recipient,
+          transcript: request.transcript,
         },
         ...historyItems,
-      ].slice(0, 8);
+      ].slice(0, 12);
       setHistoryItems(nextHistory);
       saveHistory(nextHistory);
       setActiveView("dashboard");
@@ -919,9 +970,21 @@ export function HandoffDemo({
     const extension = name.split(".").pop()?.toLowerCase();
     const isText = extension === "txt" || extension === "md" || file.type.startsWith("text/");
     const isPdf = extension === "pdf" || file.type === "application/pdf";
+    const isDocx = extension === "docx";
+    const isXlsx = extension === "xlsx" || extension === "xls";
+    const isHwp = extension === "hwp" || extension === "hwpx";
 
-    if (!isText && !isPdf) {
+    if (!isText && !isPdf && !isDocx && !isXlsx && !isHwp) {
       setFileNotice(t.unsupportedFile);
+      return;
+    }
+
+    if (isHwp) {
+      setSelectedFileName(name);
+      setTranscript((value) =>
+        [value, `\n\n[HWP source selected: ${name}]`].filter(Boolean).join("\n"),
+      );
+      setFileNotice(t.hwpUnsupported);
       return;
     }
 
@@ -935,18 +998,26 @@ export function HandoffDemo({
       return;
     }
 
+    const extractor: { run: (f: File) => Promise<string>; okKey: string; failKey: string } = isPdf
+      ? { run: extractPdfText, okKey: "pdfExtracted", failKey: "pdfExtractFailed" }
+      : isDocx
+        ? { run: extractDocxText, okKey: "docxExtracted", failKey: "docxExtractFailed" }
+        : { run: extractXlsxText, okKey: "xlsxExtracted", failKey: "xlsxExtractFailed" };
+
     try {
-      const text = await extractPdfText(file);
+      const text = await extractor.run(file);
       if (text.trim().length === 0) {
         throw new Error("empty extracted text");
       }
       setTranscript((value) => [value, `\n\n--- ${name} ---\n${text}`].filter(Boolean).join("\n"));
-      setFileNotice(t.pdfExtracted.replace("{count}", String(text.length)));
+      const okMessage = (t as Record<string, string>)[extractor.okKey] || t.fileLoaded;
+      setFileNotice(okMessage.replace("{count}", String(text.length)));
     } catch {
       setTranscript((value) =>
-        [value, `\n\n[PDF source selected: ${name}]`].filter(Boolean).join("\n"),
+        [value, `\n\n[source selected: ${name}]`].filter(Boolean).join("\n"),
       );
-      setFileNotice(t.pdfExtractFailed);
+      const failMessage = (t as Record<string, string>)[extractor.failKey] || t.pdfExtractFailed;
+      setFileNotice(failMessage);
     }
   }
 
@@ -998,6 +1069,31 @@ export function HandoffDemo({
     setError(null);
     setShowJson(false);
     setActiveView("input");
+  }
+
+  function handleOpenHistory(item: HistoryItem) {
+    if (!item.response) return;
+    setRawResult(item.response);
+    setMeetingTitle(item.meetingTitle || item.title || "");
+    setRecipient(item.recipient || "");
+    setTranscript(item.transcript || "");
+    setSelectedFileName("");
+    setFileNotice("");
+    setCopyStatus("idle");
+    setError(null);
+    setShowJson(false);
+    setActiveView("dashboard");
+  }
+
+  function handleDeleteHistory(id: string) {
+    const next = historyItems.filter((item) => item.id !== id);
+    setHistoryItems(next);
+    saveHistory(next);
+  }
+
+  function handleClearHistory() {
+    setHistoryItems([]);
+    saveHistory([]);
   }
 
   async function handleWebhookTest() {
@@ -1169,13 +1265,24 @@ export function HandoffDemo({
     >
       {historyItems.length ? (
         <div className="grid gap-3">
+          {historyItems.length > 1 && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleClearHistory}
+                className="rounded-md border border-[#EE684E]/[0.35] bg-[#EE684E]/[0.10] px-3 py-1 text-xs font-semibold text-[#FFE5DE] transition hover:bg-[#EE684E]/[0.20] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EE684E]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+              >
+                {t.historyClearAll}
+              </button>
+            </div>
+          )}
           {historyItems.map((item) => (
             <article
               key={item.id}
               className="rounded-lg border border-white/[0.12] bg-white/[0.045] p-4"
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-sm font-semibold text-[#f6f4ee]">{item.title}</h3>
                   <p className="mt-1 text-sm leading-6 text-[#a8b2c4]">{item.summary}</p>
                 </div>
@@ -1184,9 +1291,28 @@ export function HandoffDemo({
                   <StatusBadge>{item.deliveryLabel}</StatusBadge>
                 </div>
               </div>
-              <p className="mt-3 text-xs text-[#7d8798]">
-                {new Date(item.createdAt).toLocaleString(lang === "ko" ? "ko-KR" : "en-US")}
-              </p>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-[#7d8798]">
+                  {new Date(item.createdAt).toLocaleString(lang === "ko" ? "ko-KR" : "en-US")}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenHistory(item)}
+                    disabled={!item.response}
+                    className="rounded-md border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.14] px-3 py-1 text-xs font-semibold text-white transition hover:bg-[#5D7EEB]/[0.24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {t.historyReopen}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteHistory(item.id)}
+                    className="rounded-md border border-white/15 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-[#c7cfdd] transition hover:bg-[#EE684E]/[0.16] hover:border-[#EE684E]/[0.35] hover:text-[#FFE5DE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EE684E]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+                  >
+                    {t.historyDelete}
+                  </button>
+                </div>
+              </div>
             </article>
           ))}
         </div>
@@ -1275,7 +1401,7 @@ export function HandoffDemo({
                 <input
                   className="sr-only"
                   type="file"
-                  accept=".txt,.md,.pdf,text/plain,application/pdf"
+                  accept=".txt,.md,.pdf,.docx,.xlsx,.xls,.hwp,.hwpx,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   onChange={(event) => void handleFileChange(event.target.files?.[0])}
                 />
               </label>
