@@ -73,16 +73,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Handoff — Execution Memory Workbench" },
-      { name: "description", content: "회의록·메모·이슈·업무 요청을 다음 AI Agent Run이 바로 이어받을 실행 기억으로 정리하는 Handoff 작업대." },
+      {
+        name: "description",
+        content:
+          "회의록·메모·이슈·업무 요청을 다음 AI Agent Run이 바로 이어받을 실행 기억으로 정리하는 Handoff 작업대.",
+      },
       { name: "author", content: "Handoff" },
       { property: "og:title", content: "Handoff — Execution Memory Workbench" },
-      { property: "og:description", content: "회의록·메모·이슈·업무 요청을 다음 AI Agent Run이 바로 이어받을 실행 기억으로 정리하는 Handoff 작업대." },
+      {
+        property: "og:description",
+        content:
+          "회의록·메모·이슈·업무 요청을 다음 AI Agent Run이 바로 이어받을 실행 기억으로 정리하는 Handoff 작업대.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Handoff — Execution Memory Workbench" },
-      { name: "twitter:description", content: "회의록·메모·이슈·업무 요청을 다음 AI Agent Run이 바로 이어받을 실행 기억으로 정리하는 Handoff 작업대." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d13ce7da-015c-440e-b8ed-d67950ffe890/id-preview-7143e9cc--523ca52e-6246-4497-be92-ce36b31e5bdc.lovable.app-1779594679922.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d13ce7da-015c-440e-b8ed-d67950ffe890/id-preview-7143e9cc--523ca52e-6246-4497-be92-ce36b31e5bdc.lovable.app-1779594679922.png" },
+      {
+        name: "twitter:description",
+        content:
+          "회의록·메모·이슈·업무 요청을 다음 AI Agent Run이 바로 이어받을 실행 기억으로 정리하는 Handoff 작업대.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d13ce7da-015c-440e-b8ed-d67950ffe890/id-preview-7143e9cc--523ca52e-6246-4497-be92-ce36b31e5bdc.lovable.app-1779594679922.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d13ce7da-015c-440e-b8ed-d67950ffe890/id-preview-7143e9cc--523ca52e-6246-4497-be92-ce36b31e5bdc.lovable.app-1779594679922.png",
+      },
     ],
     links: [
       {

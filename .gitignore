@@ -20,6 +20,10 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Local agent state
+.omc/
+.omx/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

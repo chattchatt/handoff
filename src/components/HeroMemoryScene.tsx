@@ -130,7 +130,10 @@ export function HeroMemoryScene() {
     const drawDeepField = (time: number) => {
       for (const star of stars) {
         const parallax = 1 + star.z * 20;
-        const x = ((star.x * width + pointer.x * parallax + time * (0.003 + star.z * 0.006)) % (width + 80)) - 40;
+        const x =
+          ((star.x * width + pointer.x * parallax + time * (0.003 + star.z * 0.006)) %
+            (width + 80)) -
+          40;
         const y = star.y * height + pointer.y * parallax * 0.4;
         const pulse = 0.74 + Math.sin(time * 0.0015 + star.twinkle) * 0.26;
         const size = star.size * (0.6 + star.z * 0.9);
@@ -186,7 +189,10 @@ export function HeroMemoryScene() {
       const mobile = width < 760;
       const radius = Math.min(width, height) * (mobile ? 0.38 : 0.3);
       const centerX = width * (mobile ? 0.58 : 0.68) + pointer.x * (mobile ? 14 : 30);
-      const centerY = height * (mobile ? 0.38 : 0.38) + pointer.y * (mobile ? 10 : 22) + scroll * (mobile ? 36 : 68);
+      const centerY =
+        height * (mobile ? 0.38 : 0.38) +
+        pointer.y * (mobile ? 10 : 22) +
+        scroll * (mobile ? 36 : 68);
       const rotY = time * 0.00018 + pointer.x * 0.22;
       const rotX = -0.18 + Math.sin(time * 0.00022) * 0.08 + pointer.y * 0.12;
 
@@ -214,7 +220,14 @@ export function HeroMemoryScene() {
         context.fill();
       }
 
-      const glow = context.createRadialGradient(centerX, centerY, radius * 0.2, centerX, centerY, radius * 1.18);
+      const glow = context.createRadialGradient(
+        centerX,
+        centerY,
+        radius * 0.2,
+        centerX,
+        centerY,
+        radius * 1.18,
+      );
       glow.addColorStop(0, "rgba(255,255,255,0)");
       glow.addColorStop(0.68, "rgba(255,255,255,0.035)");
       glow.addColorStop(1, "rgba(255,255,255,0.11)");
@@ -232,14 +245,21 @@ export function HeroMemoryScene() {
 
       const scroll = Math.min(1, window.scrollY / Math.max(window.innerHeight, 1));
       context.clearRect(0, 0, width, height);
-      context.fillStyle = "#030407";
+      context.fillStyle = "#1A1F31";
       context.fillRect(0, 0, width, height);
 
       drawDeepField(time);
       drawTunnel(time, scroll);
       drawSphere(time, scroll);
 
-      const shade = context.createRadialGradient(width * 0.55, height * 0.38, Math.min(width, height) * 0.2, width * 0.5, height * 0.5, Math.max(width, height) * 0.72);
+      const shade = context.createRadialGradient(
+        width * 0.55,
+        height * 0.38,
+        Math.min(width, height) * 0.2,
+        width * 0.5,
+        height * 0.5,
+        Math.max(width, height) * 0.72,
+      );
       shade.addColorStop(0, "rgba(0,0,0,0)");
       shade.addColorStop(1, "rgba(0,0,0,0.54)");
       context.fillStyle = shade;
