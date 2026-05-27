@@ -121,10 +121,11 @@ const workbenchCopy = {
     workContext: "업무 맥락",
     fileUpload: "문서 업로드",
     fileHint:
-      ".txt, .pdf 파일을 우선 지원합니다. .md도 본문에 자동 추가되고, PDF는 선택 상태와 파일명을 실행 맥락에 반영합니다.",
+      ".txt, .pdf 파일을 우선 지원합니다. PDF는 브라우저에서 본문 텍스트를 추출해 업무 맥락에 추가하고, .md도 동일하게 본문에 자동 추가됩니다.",
     fileLoaded: "파일 내용을 업무 맥락에 추가했습니다.",
-    pdfSelected:
-      "PDF가 선택되었습니다. 현재 브라우저 MVP에서는 파일명과 PDF 맥락을 전달하고, 본문 추출은 백엔드/n8n 연결 대상입니다.",
+    pdfExtracted: "PDF에서 본문 {count}자를 업무 맥락에 추가했습니다.",
+    pdfExtractFailed:
+      "PDF 본문 추출에 실패했습니다. 파일명만 맥락에 추가했습니다. 텍스트 기반이 아닌 스캔 PDF일 수 있습니다.",
     unsupportedFile: "지원 형식은 TXT, MD, PDF입니다.",
     selectedFile: "선택 파일",
     contextPlaceholder:
@@ -160,6 +161,12 @@ const workbenchCopy = {
     resultActions: "생성 결과 액션",
     copyResult: "복사하기",
     copiedResult: "복사 완료",
+    copyCard: "복사",
+    copiedCard: "복사됨",
+    importanceConfirmed: "확정",
+    importanceAction: "진행 필요",
+    importanceReview: "추가 확인",
+    importancePrompt: "AI 전달용",
     downloadMd: "Markdown 다운로드",
     savePdf: "PDF 저장",
     newMemory: "새 기억 만들기",
@@ -224,10 +231,11 @@ const workbenchCopy = {
     workContext: "Work context",
     fileUpload: "Document upload",
     fileHint:
-      ".txt and .pdf are the supported priority formats. .md is appended to the context; PDF selection and filename are included in the run context.",
+      ".txt and .pdf are the supported priority formats. PDF text is extracted in the browser and appended to the work context; .md is appended the same way.",
     fileLoaded: "File content was added to the work context.",
-    pdfSelected:
-      "PDF selected. This browser MVP sends filename/PDF context; full text extraction belongs in the backend/n8n path.",
+    pdfExtracted: "Extracted {count} characters from PDF into the work context.",
+    pdfExtractFailed:
+      "Could not extract PDF text. Only the filename was added — the file may be a scanned (non-text) PDF.",
     unsupportedFile: "Supported formats are TXT, MD, and PDF.",
     selectedFile: "Selected file",
     contextPlaceholder:
@@ -263,6 +271,12 @@ const workbenchCopy = {
     resultActions: "Generated result actions",
     copyResult: "Copy",
     copiedResult: "Copied",
+    copyCard: "Copy",
+    copiedCard: "Copied",
+    importanceConfirmed: "Confirmed",
+    importanceAction: "Action needed",
+    importanceReview: "Needs review",
+    importancePrompt: "For AI",
     downloadMd: "Download Markdown",
     savePdf: "Save PDF",
     newMemory: "New memory",
@@ -444,6 +458,38 @@ function buildResultText(
   return lines.filter((line) => line !== undefined && line !== null).join("\n");
 }
 
+function buildCardText(title: string, lines: Array<string | undefined>): string {
+  const clean = lines.filter((line): line is string => Boolean(line && line.trim().length));
+  return [`# ${title}`, "", ...clean.map((line) => (line.startsWith("- ") ? line : `- ${line}`))]
+    .join("\n")
+    .trim();
+}
+
+async function extractPdfText(file: File): Promise<string> {
+  if (typeof window === "undefined") {
+    throw new Error("PDF parsing requires browser context");
+  }
+  const pdfjs = await import("pdfjs-dist");
+  if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+    const workerMod = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+    pdfjs.GlobalWorkerOptions.workerSrc = workerMod.default;
+  }
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: buffer }).promise;
+  const parts: string[] = [];
+  for (let i = 1; i <= pdf.numPages; i += 1) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const text = textContent.items
+      .map((item) =>
+        item && typeof item === "object" && "str" in item ? (item as { str: string }).str : "",
+      )
+      .join(" ");
+    parts.push(text.trim());
+  }
+  return parts.filter(Boolean).join("\n\n");
+}
+
 async function copyText(value: string) {
   if (navigator.clipboard?.writeText) {
     try {
@@ -543,6 +589,27 @@ function ListBlock({
   );
 }
 
+type Importance = "confirmed" | "action" | "review" | "prompt";
+
+const IMPORTANCE_STYLE: Record<Importance, { bar: string; badge: string }> = {
+  confirmed: {
+    bar: "bg-[#5D7EEB]",
+    badge: "border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.14] text-white",
+  },
+  action: {
+    bar: "bg-[#BAC8F4]",
+    badge: "border-white/[0.45] bg-white/[0.92] text-[#1A1F31]",
+  },
+  review: {
+    bar: "bg-[#EE684E]",
+    badge: "border-[#EE684E]/[0.45] bg-[#EE684E]/[0.18] text-[#FFE5DE]",
+  },
+  prompt: {
+    bar: "bg-[#7D98EE]",
+    badge: "border-[#7D98EE]/[0.45] bg-[#7D98EE]/[0.16] text-white",
+  },
+};
+
 function WorkbenchCard({
   eyebrow,
   title,
@@ -552,6 +619,11 @@ function WorkbenchCard({
   status = "Ready",
   labels,
   highlight = false,
+  importance,
+  importanceLabel,
+  onCopy,
+  copyLabel,
+  copiedLabel,
   children,
 }: {
   eyebrow: string;
@@ -562,23 +634,61 @@ function WorkbenchCard({
   status?: string;
   labels?: { evidence: string; nextAction: string };
   highlight?: boolean;
+  importance?: Importance;
+  importanceLabel?: string;
+  onCopy?: () => Promise<boolean>;
+  copyLabel?: string;
+  copiedLabel?: string;
   children?: ReactNode;
 }) {
   const cardLabels = labels ?? { evidence: "근거", nextAction: "다음 액션" };
   const panelClass = highlight
     ? "border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_24px_70px_rgba(93,126,235,0.18)] backdrop-blur-2xl"
     : glassPanel;
+  const importanceStyle = importance ? IMPORTANCE_STYLE[importance] : null;
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopyClick() {
+    if (!onCopy) return;
+    const ok = await onCopy();
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    }
+  }
 
   return (
-    <article className={`rounded-xl p-5 ${panelClass}`}>
+    <article className={`relative overflow-hidden rounded-xl p-5 ${panelClass}`}>
+      {importanceStyle && (
+        <span aria-hidden className={`absolute inset-y-0 left-0 w-[3px] ${importanceStyle.bar}`} />
+      )}
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7d8798]">
             {eyebrow}
           </p>
-          <h3 className="mt-1 text-lg font-semibold text-[#f6f4ee]">{title}</h3>
+          <h3 className="mt-1 text-lg font-bold text-[#f6f4ee]">{title}</h3>
         </div>
-        <StatusBadge tone={status === "Needs evidence" ? "warn" : "good"}>{status}</StatusBadge>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {importance && importanceLabel && importanceStyle && (
+            <span
+              className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${importanceStyle.badge}`}
+            >
+              {importanceLabel}
+            </span>
+          )}
+          {onCopy && (
+            <button
+              type="button"
+              onClick={handleCopyClick}
+              className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-semibold text-[#e8edf6] transition hover:bg-[#5D7EEB]/[0.12] hover:border-[#5D7EEB]/[0.35] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+              aria-label={copyLabel ?? "Copy card"}
+            >
+              {copied ? (copiedLabel ?? "복사됨") : (copyLabel ?? "복사")}
+            </button>
+          )}
+          <StatusBadge tone={status === "Needs evidence" ? "warn" : "good"}>{status}</StatusBadge>
+        </div>
       </div>
       {summary && <p className="mb-4 text-sm leading-6 text-[#c7cfdd]">{summary}</p>}
       {children}
@@ -823,10 +933,19 @@ export function HandoffDemo({
       return;
     }
 
-    setTranscript((value) =>
-      [value, `\n\n[PDF source selected: ${name}]`].filter(Boolean).join("\n"),
-    );
-    setFileNotice(t.pdfSelected);
+    try {
+      const text = await extractPdfText(file);
+      if (text.trim().length === 0) {
+        throw new Error("empty extracted text");
+      }
+      setTranscript((value) => [value, `\n\n--- ${name} ---\n${text}`].filter(Boolean).join("\n"));
+      setFileNotice(t.pdfExtracted.replace("{count}", String(text.length)));
+    } catch {
+      setTranscript((value) =>
+        [value, `\n\n[PDF source selected: ${name}]`].filter(Boolean).join("\n"),
+      );
+      setFileNotice(t.pdfExtractFailed);
+    }
   }
 
   async function handleCopyResult() {
@@ -1215,6 +1334,18 @@ export function HandoffDemo({
           evidence={result.meetingUnderstanding.customerContext || t.goalEvidence}
           action={t.goalAction}
           labels={cardLabels}
+          importance="confirmed"
+          importanceLabel={t.importanceConfirmed}
+          copyLabel={t.copyCard}
+          copiedLabel={t.copiedCard}
+          onCopy={() =>
+            copyText(
+              buildCardText(lang === "ko" ? "핵심 요약" : "Summary", [
+                result.meetingUnderstanding.goal,
+                ...result.meetingUnderstanding.requirements,
+              ]),
+            )
+          }
         >
           <ListBlock items={result.meetingUnderstanding.requirements.slice(0, 3)} />
         </WorkbenchCard>
@@ -1225,6 +1356,18 @@ export function HandoffDemo({
           evidence={t.contextEvidence}
           action={t.contextAction}
           labels={cardLabels}
+          importance="confirmed"
+          importanceLabel={t.importanceConfirmed}
+          copyLabel={t.copyCard}
+          copiedLabel={t.copiedCard}
+          onCopy={() =>
+            copyText(
+              buildCardText(lang === "ko" ? "결정 사항" : "Decisions", [
+                result.meetingUnderstanding.customerContext,
+                ...result.meetingUnderstanding.keyDecisions,
+              ]),
+            )
+          }
         >
           <ListBlock items={result.meetingUnderstanding.keyDecisions.slice(0, 4)} />
         </WorkbenchCard>
@@ -1237,6 +1380,19 @@ export function HandoffDemo({
             action={t.requestAction}
             labels={cardLabels}
             highlight
+            importance="action"
+            importanceLabel={t.importanceAction}
+            copyLabel={t.copyCard}
+            copiedLabel={t.copiedCard}
+            onCopy={() =>
+              copyText(
+                buildCardText(t.executionRequests, [
+                  result.deliverablePack.title,
+                  result.deliverablePack.brief,
+                  ...result.deliverablePack.tasks,
+                ]),
+              )
+            }
           >
             <ListBlock items={result.deliverablePack.tasks.slice(0, 4)} />
           </WorkbenchCard>
@@ -1247,6 +1403,13 @@ export function HandoffDemo({
           summary={t.missingContextSummary}
           status={result.meetingUnderstanding.missingInfo.length ? "Needs evidence" : "Ready"}
           labels={cardLabels}
+          importance="review"
+          importanceLabel={t.importanceReview}
+          copyLabel={t.copyCard}
+          copiedLabel={t.copiedCard}
+          onCopy={() =>
+            copyText(buildCardText(t.missingContext, result.meetingUnderstanding.missingInfo))
+          }
         >
           <ListBlock items={result.meetingUnderstanding.missingInfo.slice(0, 4)} tone="warn" />
         </WorkbenchCard>
@@ -1259,6 +1422,18 @@ export function HandoffDemo({
             action={result.harness.nextVerificationStep || t.ledgerAction}
             status={result.harness.missingEvidence.length > 0 ? "Needs evidence" : "Ready"}
             labels={cardLabels}
+            importance="confirmed"
+            importanceLabel={t.importanceConfirmed}
+            copyLabel={t.copyCard}
+            copiedLabel={t.copiedCard}
+            onCopy={() =>
+              copyText(
+                buildCardText(t.evidenceLedger, [
+                  ...result.harness.doneEvidence.map((s) => `[done] ${s}`),
+                  ...result.harness.missingEvidence.map((s) => `[missing] ${s}`),
+                ]),
+              )
+            }
           >
             <ListBlock
               items={[...result.harness.doneEvidence, ...result.harness.missingEvidence].slice(
@@ -1282,6 +1457,18 @@ export function HandoffDemo({
               }
               action={t.nextRunAction}
               labels={cardLabels}
+              importance="prompt"
+              importanceLabel={t.importancePrompt}
+              copyLabel={t.copyCard}
+              copiedLabel={t.copiedCard}
+              onCopy={() =>
+                copyText(
+                  buildCardText(t.nextExecution, [
+                    result.executionMemory.continuationPrompt,
+                    ...result.executionMemory.nextActions,
+                  ]),
+                )
+              }
             >
               <ListBlock items={result.executionMemory.nextActions} />
             </WorkbenchCard>

@@ -116,29 +116,105 @@ const commands = [
 
 const ALL_COMMANDS = commands.map(([, command]) => command).join("\n");
 
-const previewCards: Record<Lang, Array<{ title: string; body: string }>> = {
+type CardImportance = "confirmed" | "action" | "review" | "prompt";
+type PreviewCard = { title: string; body: string; importance: CardImportance; tag: string };
+
+const previewCards: Record<Lang, Array<PreviewCard>> = {
   ko: [
-    { title: "핵심 요약", body: "현재 목표와 실행 상태를 한 문단으로 정리합니다." },
-    { title: "결정 사항", body: "이미 합의된 내용과 요구사항을 분리합니다." },
-    { title: "후속 작업", body: "이어받는 담당자가 바로 처리할 작업을 앞에 둡니다." },
-    { title: "보완 필요 사항", body: "실행 전 더 필요한 맥락과 리스크를 드러냅니다." },
-    { title: "사용한 맥락/근거 자료", body: "원문에서 어떤 근거를 사용했는지 추적합니다." },
+    {
+      title: "핵심 요약",
+      body: "현재 목표와 실행 상태를 한 문단으로 정리합니다.",
+      importance: "confirmed",
+      tag: "확정",
+    },
+    {
+      title: "결정 사항",
+      body: "이미 합의된 내용과 요구사항을 분리합니다.",
+      importance: "confirmed",
+      tag: "확정",
+    },
+    {
+      title: "후속 작업",
+      body: "이어받는 담당자가 바로 처리할 작업을 앞에 둡니다.",
+      importance: "action",
+      tag: "진행 필요",
+    },
+    {
+      title: "보완 필요 사항",
+      body: "실행 전 더 필요한 맥락과 리스크를 드러냅니다.",
+      importance: "review",
+      tag: "추가 확인",
+    },
+    {
+      title: "사용한 맥락/근거 자료",
+      body: "원문에서 어떤 근거를 사용했는지 추적합니다.",
+      importance: "confirmed",
+      tag: "확정",
+    },
     {
       title: "AI 호출용 프롬프트",
       body: "필요한 경우 다음 Agent Run에 넘길 프롬프트를 제공합니다.",
+      importance: "prompt",
+      tag: "AI 전달용",
     },
   ],
   en: [
-    { title: "Summary", body: "Current goal and runnable state in one short section." },
-    { title: "Decisions", body: "Agreed decisions and requirements are separated." },
-    { title: "Follow-up Tasks", body: "The next executor sees the immediate work first." },
-    { title: "Missing Context", body: "Gaps and risks are exposed before execution." },
-    { title: "Context / Evidence", body: "The source evidence behind the result stays traceable." },
+    {
+      title: "Summary",
+      body: "Current goal and runnable state in one short section.",
+      importance: "confirmed",
+      tag: "Confirmed",
+    },
+    {
+      title: "Decisions",
+      body: "Agreed decisions and requirements are separated.",
+      importance: "confirmed",
+      tag: "Confirmed",
+    },
+    {
+      title: "Follow-up Tasks",
+      body: "The next executor sees the immediate work first.",
+      importance: "action",
+      tag: "Action needed",
+    },
+    {
+      title: "Missing Context",
+      body: "Gaps and risks are exposed before execution.",
+      importance: "review",
+      tag: "Needs review",
+    },
+    {
+      title: "Context / Evidence",
+      body: "The source evidence behind the result stays traceable.",
+      importance: "confirmed",
+      tag: "Confirmed",
+    },
     {
       title: "AI Prompt",
       body: "A continuation prompt is available when another Agent Run needs it.",
+      importance: "prompt",
+      tag: "For AI",
     },
   ],
+};
+
+const PREVIEW_IMPORTANCE_STYLE: Record<CardImportance, { bar: string; badge: string }> = {
+  confirmed: {
+    bar: "bg-[#5D7EEB]",
+    badge: "border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.14] text-white",
+  },
+  action: {
+    bar: "bg-[#BAC8F4]",
+    badge: "border-white/[0.45] bg-white/[0.92] text-[#1A1F31]",
+  },
+  review: {
+    bar: "bg-[#EE684E]",
+    badge: "border-[#EE684E]/[0.45] bg-[#EE684E]/[0.18] text-[#FFE5DE]",
+  },
+  prompt: {
+    bar: "bg-[#7D98EE]",
+    badge: "border-[#7D98EE]/[0.45] bg-[#7D98EE]/[0.16] text-white",
+  },
 };
 
 const processSteps: Record<Lang, string[]> = {
@@ -471,22 +547,30 @@ export function HandoffLanding() {
             </p>
           </div>
           <div className="grid content-start gap-3 sm:grid-cols-2">
-            {previewCards[lang].map((item, index) => (
-              <div
-                key={item.title}
-                className={
-                  index === 2
-                    ? "rounded-lg border border-white/[0.24] bg-white/[0.11] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] sm:col-span-2"
-                    : "rounded-lg border border-white/[0.12] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-                }
-              >
-                <p className="text-xs font-semibold text-[#7d8798]">
-                  {String(index + 1).padStart(2, "0")}
-                </p>
-                <p className="mt-3 text-sm font-semibold text-[#f6f4ee]">{item.title}</p>
-                <p className="mt-2 text-xs leading-5 text-[#9aa3b5]">{item.body}</p>
-              </div>
-            ))}
+            {previewCards[lang].map((item, index) => {
+              const style = PREVIEW_IMPORTANCE_STYLE[item.importance];
+              const baseClass =
+                index === 2
+                  ? "rounded-lg border border-white/[0.24] bg-white/[0.11] p-4 pl-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] sm:col-span-2"
+                  : "rounded-lg border border-white/[0.12] bg-white/[0.04] p-4 pl-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]";
+              return (
+                <div key={item.title} className={`relative overflow-hidden ${baseClass}`}>
+                  <span aria-hidden className={`absolute inset-y-0 left-0 w-[3px] ${style.bar}`} />
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-xs font-semibold text-[#7d8798]">
+                      {String(index + 1).padStart(2, "0")}
+                    </p>
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${style.badge}`}
+                    >
+                      {item.tag}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm font-bold text-[#f6f4ee]">{item.title}</p>
+                  <p className="mt-2 text-xs leading-5 text-[#c7cfdd]">{item.body}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
