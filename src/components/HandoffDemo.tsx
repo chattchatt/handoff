@@ -116,6 +116,7 @@ const workbenchCopy = {
     workName: "작업 이름",
     workNamePlaceholder: "예: 온보딩 개선 논의",
     recipient: "수신자/대상",
+    recipientPlaceholder: "이어받는 담당자 이름 또는 역할 (전송용 X)",
     optional: "선택",
     requestType: "결과 유형",
     workContext: "업무 맥락",
@@ -226,6 +227,7 @@ const workbenchCopy = {
     workName: "Work name",
     workNamePlaceholder: "Example: onboarding improvement discussion",
     recipient: "Recipient / target",
+    recipientPlaceholder: "Next executor's name or role (not used for delivery)",
     optional: "Optional",
     requestType: "Result type",
     workContext: "Work context",
@@ -1224,7 +1226,7 @@ export function HandoffDemo({
                 className={`rounded-md p-3 text-sm text-[#e8edf6] outline-none focus:border-[#f4efe4]/[0.55] ${glassField}`}
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
-                placeholder={t.optional}
+                placeholder={t.recipientPlaceholder}
               />
             </label>
           </div>
