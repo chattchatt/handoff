@@ -216,9 +216,6 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
         >
           Handoff
         </span>
-        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9aa3b5]">
-          E-Hong
-        </span>
       </span>
     </span>
   );
