@@ -75,13 +75,7 @@ const copy = {
   },
 } satisfies Record<Lang, Record<string, string | Record<string, string>>>;
 
-const commands = [
-  ["install", CLONE_COMMAND],
-  ["configure", "cd handoff && npm install"],
-  ["run", "npm run dev  # 실행 후 http://127.0.0.1:8080"],
-] as const;
 
-const ALL_COMMANDS = commands.map(([, command]) => command).join("\n");
 
 type CardImportance = "confirmed" | "action" | "review" | "prompt";
 type PreviewCard = { title: string; body: string; importance: CardImportance; tag: string };
