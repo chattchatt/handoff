@@ -96,9 +96,30 @@ export function HandoffLanding() {
                 </button>
               ))}
             </div>
-            <div className="hidden sm:block">
-              <StartButton />
-            </div>
+            {auth.configured && auth.loggedIn ? (
+              <div className="hidden items-center gap-2 sm:flex">
+                {auth.user?.avatarUrl && (
+                  <img
+                    src={auth.user.avatarUrl}
+                    alt={auth.user.login}
+                    className="h-8 w-8 rounded-full border border-[var(--d-border)]"
+                  />
+                )}
+                <StartButton />
+                <button
+                  type="button"
+                  onClick={() => void auth.logout()}
+                  aria-label="Logout"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--d-surface)] text-[var(--d-muted)] transition hover:text-[var(--d-fg)]"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="hidden sm:block">
+                <StartButton />
+              </div>
+            )}
           </div>
         </div>
       </header>
