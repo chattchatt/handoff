@@ -108,7 +108,7 @@ const pipelineStepsByLang: Record<Lang, string[]> = {
 
 const workbenchCopy = {
   ko: {
-    sidebarBody: "업무 맥락을 다음 Agent Run이 이어받을 실행 상태로 정리합니다.",
+    sidebarBody: "회의록·문서를 AI가 바로 실행할 작업으로 바꿔 GitHub로 넘깁니다.",
     headerEyebrow: "Agent Handoff Workbench",
     headerTitle: "이어받는 담당자가 사용할 기억, 근거, 후속 작업",
     headerBody:
@@ -297,7 +297,7 @@ const workbenchCopy = {
     verifyPromptHint: "전문은 AI 프롬프트 탭에서 볼 수 있습니다.",
   },
   en: {
-    sidebarBody: "Turn work context into runnable state your next Agent Run can inherit.",
+    sidebarBody: "Turn meeting notes and docs into work an AI can run, then hand it to GitHub.",
     headerEyebrow: "Agent Handoff Workbench",
     headerTitle: "Memory, evidence, and next actions for the next executor",
     headerBody:
@@ -949,86 +949,49 @@ function VerifyRow({
   );
 }
 
+// The dashboard is the human layer (per the product essay): it shows only what a
+// person needs to understand and review — a one-line summary, the tasks the work was
+// split into, and a warning when context is missing. Decisions, requirements, risks,
+// raw context, and pipeline metrics are intentionally NOT shown here; they live in the
+// GitHub issue or behind the scenes. The AI prompt is surfaced prominently above.
 function VerificationTable({
   result,
   t,
-  sourcePages,
-  inputType,
-  onCopyPrompt,
-  onPublish,
 }: {
   result: HandoffResponse;
   t: (typeof workbenchCopy)[Lang];
-  sourcePages?: number;
-  inputType: string;
-  onCopyPrompt: () => Promise<boolean>;
-  onPublish: () => void;
 }) {
   const m = result.meetingUnderstanding;
   const d = result.deliverablePack;
+  const summary = d.brief?.trim() || m.goal?.trim() || "";
   const missingCount = m.missingInfo.length;
   const ready = missingCount === 0;
-  const value = (raw: string) =>
-    raw && raw.trim() ? raw : <span className="text-[#6b7689]">{t.verifyEmpty}</span>;
 
   return (
     <section className={`mb-4 overflow-hidden rounded-2xl ${glassPanel}`}>
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.1] px-4 py-4 sm:px-5">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-white/[0.1] px-4 py-4 sm:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-bold text-[#f6f4ee]">{d.title || t.verifyTitle}</h2>
           <StatusBadge tone={ready ? "good" : "warn"}>
             {ready ? t.verifyReady : `${t.verifyNeedsContext} ${missingCount}`}
           </StatusBadge>
         </div>
-        <p className="text-xs text-[#7d8798]">
-          {inputType}
-          {sourcePages ? ` · ${sourcePages}${t.verifyPagesSuffix}` : ""}
-        </p>
+        {summary && <p className="mt-2 text-sm leading-6 text-[#c7cfdd]">{summary}</p>}
       </header>
       <div>
-        <VerifyRow label={t.verifyGoal}>{value(m.goal)}</VerifyRow>
-        <VerifyRow label={t.verifyContext}>{value(m.customerContext)}</VerifyRow>
-        {m.keyDecisions.length > 0 && (
-          <VerifyRow label={t.verifyDecisions} count={m.keyDecisions.length}>
-            <VerifyList items={m.keyDecisions} />
-          </VerifyRow>
-        )}
-        {m.requirements.length > 0 && (
-          <VerifyRow label={t.verifyRequirements} count={m.requirements.length}>
-            <VerifyList items={m.requirements} />
-          </VerifyRow>
-        )}
-        {d.tasks.length > 0 && (
+        {d.tasks.length > 0 ? (
           <VerifyRow label={t.verifyTasks} count={d.tasks.length}>
             <VerifyList items={d.tasks} marker="☐" />
           </VerifyRow>
+        ) : (
+          <div className="px-4 py-3.5 text-sm text-[#6b7689] sm:px-5">{t.verifyEmpty}</div>
         )}
-        {m.missingInfo.length > 0 && (
-          <VerifyRow label={t.verifyMissing} count={m.missingInfo.length}>
+        {missingCount > 0 && (
+          <VerifyRow label={t.verifyMissing} count={missingCount}>
             <VerifyList items={m.missingInfo} marker="⚠" tone="warn" />
           </VerifyRow>
         )}
-        {m.risks.length > 0 && (
-          <VerifyRow label={t.verifyRisks} count={m.risks.length}>
-            <VerifyList items={m.risks} marker="⚠" tone="warn" />
-          </VerifyRow>
-        )}
       </div>
-      <footer className="flex flex-wrap items-center gap-2 border-t border-white/[0.1] bg-white/[0.02] px-4 py-3.5 sm:px-5">
-        <CopyButton
-          label={t.agentPromptCopy}
-          copiedLabel={t.agentPromptCopied}
-          onCopy={onCopyPrompt}
-        />
-        <button
-          type="button"
-          onClick={onPublish}
-          className="rounded-md border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-[#e8edf6] transition hover:border-[#5D7EEB]/[0.35] hover:bg-[#5D7EEB]/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
-        >
-          {t.publishButton}
-        </button>
-        <span className="ml-auto text-xs text-[#6b7689]">{t.verifyPromptHint}</span>
-      </footer>
     </section>
   );
 }
@@ -1940,15 +1903,17 @@ export function HandoffDemo({
       )}
       <div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[17rem_1fr]">
         <aside className="border-b border-white/[0.12] bg-white/[0.035] p-5 shadow-[inset_-1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-2xl lg:border-b-0 lg:border-r">
-          <div className="mb-8">
+          <a
+            href="/"
+            aria-label={lang === "ko" ? "홈으로" : "Go home"}
+            className="mb-8 block rounded-md transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#7d8798]">
               Handoff
             </p>
-            <h1 className="mt-2 text-xl font-semibold text-[#f6f4ee]">
-              Execution Memory Workbench
-            </h1>
+            <h1 className="mt-2 text-xl font-semibold text-[#f6f4ee]">대시보드</h1>
             <p className="mt-2 text-sm leading-6 text-[#a8b2c4]">{t.sidebarBody}</p>
-          </div>
+          </a>
           <nav className="grid gap-1">
             {navItems.map((item) => {
               const historyReachable =
@@ -2289,30 +2254,33 @@ export function HandoffDemo({
 
   const dashboard = (
     <>
-      <VerificationTable
-        result={result}
-        t={t}
-        sourcePages={result.pipeline?.documentParse?.pageCount}
-        inputType={inputType}
-        onCopyPrompt={() => copyText(agentPromptText || t.agentPromptEmpty)}
-        onPublish={() => {
-          document
-            .getElementById("handoff-publish")
-            ?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }}
-      />
-      <p className="mb-4 px-1 text-xs text-[#7d8798]">
-        {result.harness.doneEvidence.length}
-        {t.countSuffix} {t.doneEvidence} · {result.harness.missingEvidence.length}
-        {t.countSuffix} {t.missingEvidence}
-        {result.harness.nextVerificationStep ? ` · ${result.harness.nextVerificationStep}` : ""}
-      </p>
-      <div className="grid gap-4">
-        <UpstagePipelineCard pipeline={result.pipeline} t={t} />
-        <div id="handoff-publish" className="scroll-mt-4">
-          <GitHubPublishCard result={result} meetingTitle={meetingTitle} lang={lang} t={t} />
-        </div>
-      </div>
+      {agentPromptText && (
+        <article className="relative mb-4 overflow-hidden rounded-2xl border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.08] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_24px_70px_rgba(93,126,235,0.20)] backdrop-blur-2xl">
+          <span
+            aria-hidden
+            className={`absolute inset-y-0 left-0 w-[3px] ${IMPORTANCE_STYLE.prompt.bar}`}
+          />
+          <div className="mb-3 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7d98ee]">
+                Agent Run
+              </p>
+              <h3 className="mt-1 text-xl font-bold text-[#f6f4ee]">{t.agentPrompt}</h3>
+            </div>
+            <CopyButton
+              label={t.agentPromptCopy}
+              copiedLabel={t.agentPromptCopied}
+              onCopy={() => copyText(agentPromptText || t.agentPromptEmpty)}
+            />
+          </div>
+          <p className="mb-4 text-sm leading-6 text-[#c7cfdd]">{t.agentPromptSummary}</p>
+          <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border border-white/10 bg-white/[0.04] p-4 text-sm leading-relaxed text-[#e8edf6]">
+            {agentPromptText}
+          </pre>
+        </article>
+      )}
+      <VerificationTable result={result} t={t} />
+      <GitHubPublishCard result={result} meetingTitle={meetingTitle} lang={lang} t={t} />
     </>
   );
 
