@@ -228,38 +228,6 @@ function scrollToId(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function CommandRow({ label, command, lang }: { label: string; command: string; lang: Lang }) {
-  const [copied, setCopied] = useState(false);
-  const text = copy[lang];
-
-  async function handleCopy() {
-    if (await writeClipboardText(command)) {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    }
-  }
-
-  return (
-    <div className="group grid gap-3 border-t border-white/10 bg-white/[0.015] px-4 py-4 sm:grid-cols-[1fr_auto] sm:items-center">
-      <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8f98aa]">
-          {label}
-        </p>
-        <code className="mt-2 flex min-w-0 items-start gap-3 break-all font-mono text-[14px] leading-6 text-[#f7f8fb] sm:break-normal sm:whitespace-nowrap">
-          <span className="select-none text-[#8fb3ff]">$</span>
-          <span>{command}</span>
-        </code>
-      </div>
-      <button
-        type="button"
-        className="h-9 rounded-md border border-white/50 bg-white/90 px-3 text-xs font-bold text-[#050609] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_10px_24px_rgba(0,0,0,0.25)] transition hover:bg-white"
-        onClick={handleCopy}
-      >
-        {copied ? (text.copiedShort as string) : (text.copy as string)}
-      </button>
-    </div>
-  );
-}
 
 function LogoLockup({ compact = false }: { compact?: boolean }) {
   return (
