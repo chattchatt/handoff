@@ -263,11 +263,11 @@ export const copy: Record<Lang, Content> = {
     },
     finalCta: {
       eyebrow: "START NOW",
-      title: "맥락을 잃지 말고 넘기세요.",
-      body: "지금 워크벤치를 열고 첫 실행 기억을 만들어 보세요. 설치도, 신용카드도 필요 없습니다.",
+      title: "다시 정리하지 마세요. 그냥 넘기세요.",
+      body: "넘기는 순간 사람과 AI 에이전트가 이어받습니다. 설치도, 신용카드도 필요 없습니다.",
     },
     footer: {
-      tagline: "흩어진 업무 맥락을 실행 기억으로 바꾸는 HandOff.",
+      tagline: "회의록·PDF·흩어진 메모를 사람과 AI가 함께 일하는 작업으로. 그냥 넘기세요.",
       rights: "© 2026 HandOff. All rights reserved.",
       cols: [
         { title: "제품", links: ["작동 방식", "기능", "요금제", "FAQ"] },
