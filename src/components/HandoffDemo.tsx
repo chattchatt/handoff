@@ -1559,7 +1559,7 @@ export function AuthButton({
 }
 
 export function HandoffDemo({
-  showDebugPanel = true,
+  showDebugPanel = false,
   lang = "ko",
 }: {
   showDebugPanel?: boolean;
@@ -1579,6 +1579,16 @@ export function HandoffDemo({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rawResult, setRawResult] = useState<unknown>(null);
+  // Debug panel is OFF by default and never gated on build mode — Lovable's hosted
+  // builds can resolve import.meta.env.DEV to true, which would leak the panel into
+  // production. Opt in explicitly with ?debug in the URL when testing the webhook.
+  const [debugForced, setDebugForced] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("debug")) {
+      setDebugForced(true);
+    }
+  }, []);
+  const debugEnabled = showDebugPanel || debugForced;
   const t = workbenchCopy[lang];
   const auth = useAuth();
   const deliveryOptions = deliveryOptionsByLang[lang];
@@ -1919,7 +1929,7 @@ export function HandoffDemo({
   const shell = (content: ReactNode) => (
     <main className="min-h-screen bg-[#1A1F31] bg-[radial-gradient(circle_at_16%_10%,rgba(255,255,255,0.08),transparent_22%),radial-gradient(circle_at_86%_8%,rgba(143,179,255,0.08),transparent_28%),linear-gradient(180deg,#1A1F31,#05070b)] text-[#f6f4ee]">
       <Toaster />
-      {showDebugPanel && (
+      {debugEnabled && (
         <DebugPanel
           loading={loading}
           error={error}
