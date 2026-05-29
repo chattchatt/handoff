@@ -22,6 +22,7 @@ const copy = {
       "회의록·메모·이슈·업무 요청을 붙여넣으면, 다음 담당자나 AI가 곧바로 일을 이어받을 수 있도록 핵심 요약·결정·해야 할 일·근거로 정리해 드립니다.",
     openGithub: "GitHub 열기",
     loginAria: "GitHub로 로그인",
+    connectLabel: "GitHub 연결",
     logoutAria: "로그아웃",
     demoCta: "지금 정리해 보기",
     previewCta: "결과 예시 보기",
