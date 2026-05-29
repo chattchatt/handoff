@@ -68,20 +68,7 @@ export function HandoffLanding() {
             <img src={handoffLogo} alt="HandOff logo" className="h-8 w-8 object-contain" />
             Hand<span className="text-[var(--d-muted)]">Off</span>
           </button>
-          <nav className="hidden items-center gap-8 text-sm font-semibold text-[var(--d-muted)] md:flex">
-            <button className="hover:text-[var(--d-fg)]" onClick={() => scrollToId("process")}>
-              {t.nav.process}
-            </button>
-            <button className="hover:text-[var(--d-fg)]" onClick={() => scrollToId("services")}>
-              {t.nav.services}
-            </button>
-            <button className="hover:text-[var(--d-fg)]" onClick={() => scrollToId("pricing")}>
-              {t.nav.pricing}
-            </button>
-            <button className="hover:text-[var(--d-fg)]" onClick={() => scrollToId("faq")}>
-              {t.nav.faq}
-            </button>
-          </nav>
+          <div className="hidden md:block" />
           <div className="flex items-center gap-2">
             <div className="flex rounded-full bg-[var(--d-surface)] p-1">
               {(["ko", "en"] as const).map((item) => (
