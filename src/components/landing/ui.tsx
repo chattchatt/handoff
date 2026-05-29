@@ -59,7 +59,7 @@ export function PrimaryButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center justify-center rounded-full bg-[var(--d-primary)] px-7 py-3.5 text-sm font-bold text-[var(--d-primary-fg)] shadow-[0_10px_30px_rgba(44,33,24,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(44,33,24,0.28)]"
+      className="inline-flex items-center justify-center rounded-full bg-[var(--d-primary)] px-7 py-3.5 text-sm font-bold text-[var(--d-primary-fg)] shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
     >
       {children}
     </button>
