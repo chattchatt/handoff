@@ -1,6 +1,7 @@
 import { useState } from "react";
-import HandoffDemo from "@/components/HandoffDemo";
+import HandoffDemo, { AuthButton } from "@/components/HandoffDemo";
 import HeroMemoryScene from "@/components/HeroMemoryScene";
+import { useAuth } from "@/lib/use-auth";
 
 type Lang = "ko" | "en";
 
@@ -27,6 +28,8 @@ const copy = {
     copied: "복사됨",
     copiedCommands: "명령어 복사됨",
     openGithub: "GitHub 열기",
+    loginAria: "GitHub로 로그인",
+    logoutAria: "로그아웃",
     demoCta: "실행 기억 만들기",
     previewCta: "예시 보기",
     workbenchCta: "Workbench",
@@ -77,6 +80,8 @@ const copy = {
     copied: "Copied",
     copiedCommands: "Commands copied",
     openGithub: "Open GitHub",
+    loginAria: "Sign in with GitHub",
+    logoutAria: "Sign out",
     demoCta: "Create memory",
     previewCta: "View example",
     workbenchCta: "Workbench",
@@ -392,8 +397,8 @@ function CliQuickstart({
 
 export function HandoffLanding() {
   const [lang, setLang] = useState<Lang>(getInitialLang);
-  const [repoCopied, setRepoCopied] = useState(false);
   const [commandsCopied, setCommandsCopied] = useState(false);
+  const auth = useAuth();
   const text = copy[lang];
   const nav = text.nav as Record<string, string>;
 
@@ -402,13 +407,6 @@ export function HandoffLanding() {
     const url = new URL(window.location.href);
     url.searchParams.set("lang", nextLang);
     window.history.replaceState({}, "", url.toString());
-  }
-
-  async function copyRepoCommand() {
-    if (await writeClipboardText(CLONE_COMMAND)) {
-      setRepoCopied(true);
-      window.setTimeout(() => setRepoCopied(false), 1500);
-    }
   }
 
   async function copyAllCommands() {
@@ -467,13 +465,10 @@ export function HandoffLanding() {
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              className="hidden rounded-md border border-white/[0.35] bg-white/[0.88] px-4 py-2 text-sm font-bold text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-white sm:block"
-              onClick={copyRepoCommand}
-            >
-              {repoCopied ? (text.copied as string) : (text.copyRepo as string)}
-            </button>
+            <AuthButton
+              auth={auth}
+              t={{ loginAria: text.loginAria as string, logoutAria: text.logoutAria as string }}
+            />
           </div>
         </div>
       </header>
