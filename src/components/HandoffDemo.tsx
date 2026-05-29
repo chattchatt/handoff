@@ -395,6 +395,7 @@ const workbenchCopy = {
     historyLoginHint: "History is saved per account after you sign in with GitHub.",
     historyLoginButton: "Sign in with GitHub",
     loginAria: "Sign in with GitHub",
+    connectLabel: "Connect GitHub",
     logoutAria: "Sign out",
     noItems: "No returned items yet.",
     goalEvidence: "The goal and current state were extracted from the input context.",
