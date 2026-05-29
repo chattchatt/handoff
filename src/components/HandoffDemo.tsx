@@ -1559,7 +1559,7 @@ export function AuthButton({
 }
 
 export function HandoffDemo({
-  showDebugPanel = true,
+  showDebugPanel = import.meta.env.DEV,
   lang = "ko",
 }: {
   showDebugPanel?: boolean;
@@ -1930,7 +1930,11 @@ export function HandoffDemo({
       )}
       <div className="mx-auto grid min-h-screen max-w-[1500px] lg:grid-cols-[17rem_1fr]">
         <aside className="border-b border-white/[0.12] bg-white/[0.035] p-5 shadow-[inset_-1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-2xl lg:border-b-0 lg:border-r">
-          <div className="mb-8">
+          <a
+            href="/"
+            aria-label={lang === "ko" ? "홈으로" : "Go home"}
+            className="mb-8 block rounded-md transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#7d8798]">
               Handoff
             </p>
@@ -1938,7 +1942,7 @@ export function HandoffDemo({
               Execution Memory Workbench
             </h1>
             <p className="mt-2 text-sm leading-6 text-[#a8b2c4]">{t.sidebarBody}</p>
-          </div>
+          </a>
           <nav className="grid gap-1">
             {navItems.map((item) => {
               const historyReachable =
