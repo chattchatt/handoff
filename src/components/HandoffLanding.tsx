@@ -316,7 +316,7 @@ export function HandoffLanding() {
                     </span>
                   ))}
                 </div>
-                <p className="mt-6 text-sm leading-6 text-[var(--d-primary-fg)]/80">
+                <p className="mt-6 text-sm leading-6 text-white/80">
                   {t.comparison.rightBody}
                 </p>
               </div>
