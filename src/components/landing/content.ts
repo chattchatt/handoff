@@ -464,7 +464,6 @@ export const copy: Record<Lang, Content> = {
     footer: {
       tagline: "Meeting notes, PDFs, scattered memos — into work people and AI do together. Just hand it off.",
       rights: "© 2026 HandOff. All rights reserved.",
-      cols: [
       cols: [],
     },
   },
