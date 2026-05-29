@@ -59,7 +59,7 @@ export function HandoffLanding() {
   return (
     <div className="handoff-landing min-h-screen overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-[var(--d-border)] bg-[var(--d-bg)]/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-[var(--d-border)] bg-[#1a1f31]/80 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <button
             className="flex items-center gap-2 text-lg font-bold tracking-tight text-[var(--d-fg)]"
