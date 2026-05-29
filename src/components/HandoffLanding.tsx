@@ -278,22 +278,22 @@ export function HandoffLanding() {
         <div className="mx-auto max-w-6xl px-5">
           <Reveal className="max-w-2xl">
             <Eyebrow>{t.comparison.eyebrow}</Eyebrow>
-            <h2 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+            <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               {t.comparison.title}
             </h2>
             <p className="mt-4 text-base text-[var(--d-muted)]">{t.comparison.body}</p>
           </Reveal>
           <div className="mt-12 grid gap-5 lg:grid-cols-2">
             <Reveal>
-              <div className="h-full rounded-3xl border border-[var(--d-border)] bg-[var(--d-bg)] p-8">
-                <h3 className="text-xl font-extrabold tracking-tight text-[var(--d-muted)]">
+              <div className="glass-panel h-full rounded-2xl p-8">
+                <h3 className="text-xl font-semibold tracking-tight text-[var(--d-muted)]">
                   {t.comparison.leftTitle}
                 </h3>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {t.comparison.leftChips.map((c) => (
                     <span
                       key={c}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[var(--d-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--d-muted)]"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-[var(--d-muted)]"
                     >
                       <X className="h-3 w-3" /> {c}
                     </span>
@@ -303,8 +303,9 @@ export function HandoffLanding() {
               </div>
             </Reveal>
             <Reveal delay={0.08}>
-              <div className="h-full rounded-3xl border border-[var(--d-primary)]/15 bg-[var(--d-primary)] p-8 text-[var(--d-primary-fg)]">
-                <h3 className="text-xl font-extrabold tracking-tight">{t.comparison.rightTitle}</h3>
+              <div className="h-full rounded-2xl border border-[#5D7EEB]/40 bg-[#5D7EEB] p-8 text-white shadow-[0_18px_70px_rgba(93,126,235,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]">
+                <h3 className="text-xl font-semibold tracking-tight">{t.comparison.rightTitle}</h3>
+
                 <div className="mt-5 flex flex-wrap gap-2">
                   {t.comparison.rightChips.map((c) => (
                     <span
