@@ -1,6 +1,8 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -123,7 +125,39 @@
 }
 
 @layer components {
+  /* ---- daval.cloud warm editorial landing theme (scoped) ---- */
+  .daval-landing {
+    --d-bg: #f6f1e8;
+    --d-bg-2: #f1eadd;
+    --d-surface: #efe7d8;
+    --d-surface-2: #e9e0cf;
+    --d-fg: #2c2118;
+    --d-muted: #8b8378;
+    --d-faded: #c8c1b4;
+    --d-primary: #33271d;
+    --d-primary-fg: #f6f1e8;
+    --d-border: rgba(44, 33, 24, 0.1);
+    --d-border-strong: rgba(44, 33, 24, 0.16);
+
+    background-color: var(--d-bg);
+    color: var(--d-fg);
+    font-family:
+      "Pretendard", "Pretendard Variable", ui-sans-serif, system-ui, -apple-system,
+      "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .daval-landing ::selection {
+    background: color-mix(in oklab, var(--d-primary) 22%, transparent);
+  }
+
+  .font-serif-accent {
+    font-family: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+    font-weight: 400;
+  }
+
   .panel {
+
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
