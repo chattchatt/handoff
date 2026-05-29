@@ -1,6 +1,5 @@
 import { useState } from "react";
 import HandoffDemo, { AuthButton } from "@/components/HandoffDemo";
-import HeroMemoryScene from "@/components/HeroMemoryScene";
 import { useAuth } from "@/lib/use-auth";
 
 type Lang = "ko" | "en";
