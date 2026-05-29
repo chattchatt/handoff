@@ -282,6 +282,19 @@ const workbenchCopy = {
     publishRepoError: "대상 레포지토리를 owner/repo 형식으로 입력하세요.",
     publishMissingFields: "레포지토리, PAT, 제목을 모두 입력하세요.",
     publishUnknownError: "이슈 발행 중 알 수 없는 오류가 발생했습니다.",
+    verifyTitle: "핸드오프 준비",
+    verifyReady: "발행 준비됨",
+    verifyNeedsContext: "보완 필요",
+    verifyPagesSuffix: "p",
+    verifyGoal: "목표",
+    verifyContext: "맥락",
+    verifyDecisions: "결정",
+    verifyRequirements: "요구사항",
+    verifyTasks: "작업",
+    verifyMissing: "누락",
+    verifyRisks: "리스크",
+    verifyEmpty: "—",
+    verifyPromptHint: "전문은 AI 프롬프트 탭에서 볼 수 있습니다.",
   },
   en: {
     sidebarBody: "Turn work context into runnable state your next Agent Run can inherit.",
@@ -458,6 +471,19 @@ const workbenchCopy = {
     publishRepoError: "Enter the target repository as owner/repo.",
     publishMissingFields: "Enter the repository, PAT, and title.",
     publishUnknownError: "An unknown error occurred while publishing the issue.",
+    verifyTitle: "Handoff readiness",
+    verifyReady: "Ready to publish",
+    verifyNeedsContext: "Needs context",
+    verifyPagesSuffix: "p",
+    verifyGoal: "Goal",
+    verifyContext: "Context",
+    verifyDecisions: "Decisions",
+    verifyRequirements: "Requirements",
+    verifyTasks: "Tasks",
+    verifyMissing: "Missing",
+    verifyRisks: "Risks",
+    verifyEmpty: "—",
+    verifyPromptHint: "Full prompt is on the AI Prompt tab.",
   },
 } satisfies Record<Lang, Record<string, string>>;
 
@@ -872,6 +898,138 @@ function PipelineMetric({ label, value }: { label: string; value?: string | numb
       <span className="text-xs text-[#9aa3b5]">{label}</span>
       <span className="text-sm font-semibold tabular-nums text-[#e8edf6]">{display}</span>
     </div>
+  );
+}
+
+function VerifyList({
+  items,
+  marker = "·",
+  tone = "default",
+}: {
+  items: string[];
+  marker?: string;
+  tone?: "default" | "warn";
+}) {
+  if (!items.length) return null;
+  const markerColor = tone === "warn" ? "text-[#e0b873]" : "text-[#6b7689]";
+  const textColor = tone === "warn" ? "text-[#ead7aa]" : "text-[#e8edf6]";
+  return (
+    <ul className="space-y-1.5">
+      {items.map((item, index) => (
+        <li key={`${item}-${index}`} className="flex gap-2">
+          <span aria-hidden className={`select-none pt-px text-xs ${markerColor}`}>
+            {marker}
+          </span>
+          <span className={textColor}>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function VerifyRow({
+  label,
+  count,
+  children,
+}: {
+  label: string;
+  count?: number;
+  children: ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[4.25rem_1fr] gap-3 border-t border-white/[0.08] px-4 py-3.5 first:border-t-0 sm:grid-cols-[6.5rem_1fr] sm:gap-5 sm:px-5">
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-[13px] font-semibold text-[#9aa3b5]">{label}</span>
+        {count != null && count > 0 && (
+          <span className="text-[11px] tabular-nums text-[#6b7689]">{count}</span>
+        )}
+      </div>
+      <div className="min-w-0 text-sm leading-6 text-[#e8edf6]">{children}</div>
+    </div>
+  );
+}
+
+function VerificationTable({
+  result,
+  t,
+  sourcePages,
+  inputType,
+  onCopyPrompt,
+  onPublish,
+}: {
+  result: HandoffResponse;
+  t: (typeof workbenchCopy)[Lang];
+  sourcePages?: number;
+  inputType: string;
+  onCopyPrompt: () => Promise<boolean>;
+  onPublish: () => void;
+}) {
+  const m = result.meetingUnderstanding;
+  const d = result.deliverablePack;
+  const missingCount = m.missingInfo.length;
+  const ready = missingCount === 0;
+  const value = (raw: string) =>
+    raw && raw.trim() ? raw : <span className="text-[#6b7689]">{t.verifyEmpty}</span>;
+
+  return (
+    <section className={`mb-4 overflow-hidden rounded-2xl ${glassPanel}`}>
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.1] px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-3">
+          <h2 className="text-base font-bold text-[#f6f4ee]">{d.title || t.verifyTitle}</h2>
+          <StatusBadge tone={ready ? "good" : "warn"}>
+            {ready ? t.verifyReady : `${t.verifyNeedsContext} ${missingCount}`}
+          </StatusBadge>
+        </div>
+        <p className="text-xs text-[#7d8798]">
+          {inputType}
+          {sourcePages ? ` · ${sourcePages}${t.verifyPagesSuffix}` : ""}
+        </p>
+      </header>
+      <div>
+        <VerifyRow label={t.verifyGoal}>{value(m.goal)}</VerifyRow>
+        <VerifyRow label={t.verifyContext}>{value(m.customerContext)}</VerifyRow>
+        {m.keyDecisions.length > 0 && (
+          <VerifyRow label={t.verifyDecisions} count={m.keyDecisions.length}>
+            <VerifyList items={m.keyDecisions} />
+          </VerifyRow>
+        )}
+        {m.requirements.length > 0 && (
+          <VerifyRow label={t.verifyRequirements} count={m.requirements.length}>
+            <VerifyList items={m.requirements} />
+          </VerifyRow>
+        )}
+        {d.tasks.length > 0 && (
+          <VerifyRow label={t.verifyTasks} count={d.tasks.length}>
+            <VerifyList items={d.tasks} marker="☐" />
+          </VerifyRow>
+        )}
+        {m.missingInfo.length > 0 && (
+          <VerifyRow label={t.verifyMissing} count={m.missingInfo.length}>
+            <VerifyList items={m.missingInfo} marker="⚠" tone="warn" />
+          </VerifyRow>
+        )}
+        {m.risks.length > 0 && (
+          <VerifyRow label={t.verifyRisks} count={m.risks.length}>
+            <VerifyList items={m.risks} marker="⚠" tone="warn" />
+          </VerifyRow>
+        )}
+      </div>
+      <footer className="flex flex-wrap items-center gap-2 border-t border-white/[0.1] bg-white/[0.02] px-4 py-3.5 sm:px-5">
+        <CopyButton
+          label={t.agentPromptCopy}
+          copiedLabel={t.agentPromptCopied}
+          onCopy={onCopyPrompt}
+        />
+        <button
+          type="button"
+          onClick={onPublish}
+          className="rounded-md border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-[#e8edf6] transition hover:border-[#5D7EEB]/[0.35] hover:bg-[#5D7EEB]/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+        >
+          {t.publishButton}
+        </button>
+        <span className="ml-auto text-xs text-[#6b7689]">{t.verifyPromptHint}</span>
+      </footer>
+    </section>
   );
 }
 
@@ -2118,159 +2276,30 @@ export function HandoffDemo({
   );
 
   const agentPromptText = result.deliverablePack.lovablePrompt || result.deliverablePack.prd;
-  const resumePromptText = result.executionMemory.continuationPrompt;
 
   const dashboard = (
     <>
-      {summaryStrip}
-      {agentPromptText && (
-        <article className="relative mb-5 overflow-hidden rounded-xl border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.08] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_24px_70px_rgba(93,126,235,0.20)] backdrop-blur-2xl">
-          <span
-            aria-hidden
-            className={`absolute inset-y-0 left-0 w-[3px] ${IMPORTANCE_STYLE.prompt.bar}`}
-          />
-          <div className="mb-3 flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7d98ee]">
-                Agent Run
-              </p>
-              <h3 className="mt-1 text-xl font-bold text-[#f6f4ee]">{t.agentPrompt}</h3>
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <span
-                className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${IMPORTANCE_STYLE.prompt.badge}`}
-              >
-                {t.importancePrompt}
-              </span>
-              <CopyButton
-                label={t.agentPromptCopy}
-                copiedLabel={t.agentPromptCopied}
-                onCopy={() => copyText(agentPromptText || t.agentPromptEmpty)}
-              />
-            </div>
-          </div>
-          <p className="mb-4 text-sm leading-6 text-[#c7cfdd]">{t.agentPromptSummary}</p>
-          <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md border border-white/10 bg-white/[0.04] p-4 text-sm leading-relaxed text-[#e8edf6]">
-            {agentPromptText}
-          </pre>
-          {resumePromptText && (
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7d8798]">
-                    {t.resumePrompt}
-                  </p>
-                  <p className="mt-1 text-xs text-[#a8b2c4]">{t.resumePromptHint}</p>
-                </div>
-                <CopyButton
-                  label={t.resumePromptCopy}
-                  copiedLabel={t.agentPromptCopied}
-                  onCopy={() => copyText(resumePromptText)}
-                />
-              </div>
-            </div>
-          )}
-        </article>
-      )}
-      <div className="grid gap-4 xl:grid-cols-2">
-        <WorkbenchCard
-          eyebrow="Summary"
-          title={lang === "ko" ? "핵심 요약" : "Summary"}
-          summary={result.meetingUnderstanding.goal}
-          evidence={result.meetingUnderstanding.customerContext || t.goalEvidence}
-          action={t.goalAction}
-          labels={cardLabels}
-          importance="confirmed"
-          importanceLabel={t.importanceConfirmed}
-          copyLabel={t.copyCard}
-          copiedLabel={t.copiedCard}
-          onCopy={() =>
-            copyText(
-              buildCardText(lang === "ko" ? "핵심 요약" : "Summary", [
-                result.meetingUnderstanding.goal,
-                ...result.meetingUnderstanding.requirements,
-              ]),
-            )
-          }
-        >
-          <ListBlock items={result.meetingUnderstanding.requirements.slice(0, 3)} />
-        </WorkbenchCard>
-        <WorkbenchCard
-          eyebrow="Decisions"
-          title={lang === "ko" ? "결정 사항" : "Decisions"}
-          summary={result.meetingUnderstanding.customerContext || t.emptyContext}
-          evidence={t.contextEvidence}
-          action={t.contextAction}
-          labels={cardLabels}
-          importance="confirmed"
-          importanceLabel={t.importanceConfirmed}
-          copyLabel={t.copyCard}
-          copiedLabel={t.copiedCard}
-          onCopy={() =>
-            copyText(
-              buildCardText(lang === "ko" ? "결정 사항" : "Decisions", [
-                result.meetingUnderstanding.customerContext,
-                ...result.meetingUnderstanding.keyDecisions,
-              ]),
-            )
-          }
-        >
-          <ListBlock items={result.meetingUnderstanding.keyDecisions.slice(0, 4)} />
-        </WorkbenchCard>
-        <div className="xl:col-span-2">
-          <WorkbenchCard
-            eyebrow="Follow-up Tasks"
-            title={t.executionRequests}
-            summary={result.deliverablePack.title}
-            evidence={result.deliverablePack.brief || result.deliverablePack.customerMessage}
-            action={t.requestAction}
-            labels={cardLabels}
-            highlight
-            importance="action"
-            importanceLabel={t.importanceAction}
-            copyLabel={t.copyCard}
-            copiedLabel={t.copiedCard}
-            onCopy={() =>
-              copyText(
-                buildCardText(t.executionRequests, [
-                  result.deliverablePack.title,
-                  result.deliverablePack.brief,
-                  ...result.deliverablePack.tasks,
-                ]),
-              )
-            }
-          >
-            <ListBlock items={result.deliverablePack.tasks.slice(0, 4)} />
-          </WorkbenchCard>
-        </div>
-        <WorkbenchCard
-          eyebrow="Missing Context"
-          title={t.missingContext}
-          summary={t.missingContextSummary}
-          status={result.meetingUnderstanding.missingInfo.length ? "Needs evidence" : "Ready"}
-          labels={cardLabels}
-          importance="review"
-          importanceLabel={t.importanceReview}
-          copyLabel={t.copyCard}
-          copiedLabel={t.copiedCard}
-          onCopy={() =>
-            copyText(buildCardText(t.missingContext, result.meetingUnderstanding.missingInfo))
-          }
-        >
-          <ListBlock items={result.meetingUnderstanding.missingInfo.slice(0, 4)} tone="warn" />
-        </WorkbenchCard>
-        <div className="xl:col-span-2">
-          <p className="px-1 text-xs text-[#7d8798]">
-            {result.harness.doneEvidence.length}
-            {t.countSuffix} {t.doneEvidence} · {result.harness.missingEvidence.length}
-            {t.countSuffix} {t.missingEvidence}
-            {result.harness.nextVerificationStep ? ` · ${result.harness.nextVerificationStep}` : ""}
-          </p>
-        </div>
-        <div className="xl:col-span-2">
-          <UpstagePipelineCard pipeline={result.pipeline} t={t} />
-        </div>
-        <div className="xl:col-span-2">
+      <VerificationTable
+        result={result}
+        t={t}
+        sourcePages={result.pipeline?.documentParse?.pageCount}
+        inputType={inputType}
+        onCopyPrompt={() => copyText(agentPromptText || t.agentPromptEmpty)}
+        onPublish={() => {
+          document
+            .getElementById("handoff-publish")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+      />
+      <p className="mb-4 px-1 text-xs text-[#7d8798]">
+        {result.harness.doneEvidence.length}
+        {t.countSuffix} {t.doneEvidence} · {result.harness.missingEvidence.length}
+        {t.countSuffix} {t.missingEvidence}
+        {result.harness.nextVerificationStep ? ` · ${result.harness.nextVerificationStep}` : ""}
+      </p>
+      <div className="grid gap-4">
+        <UpstagePipelineCard pipeline={result.pipeline} t={t} />
+        <div id="handoff-publish" className="scroll-mt-4">
           <GitHubPublishCard result={result} meetingTitle={meetingTitle} lang={lang} t={t} />
         </div>
       </div>
