@@ -235,7 +235,7 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
       <img
         className={compact ? "h-8 w-8" : "h-11 w-11"}
         src="/handoff-logo.png"
-        alt="HandOff logo"
+        alt="Handoff logo"
       />
       <span className="grid leading-tight">
         <span
@@ -243,7 +243,7 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
             compact ? "text-base font-semibold text-white" : "text-xl font-semibold text-white"
           }
         >
-          HandOff
+          Handoff
         </span>
         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9aa3b5]">
           E-Hong
@@ -253,69 +253,6 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function CliQuickstart({
-  lang,
-  commandsCopied,
-  onCopy,
-}: {
-  lang: Lang;
-  commandsCopied: boolean;
-  onCopy: () => void;
-}) {
-  const text = copy[lang];
-
-  return (
-    <div
-      id="cli"
-      className="mx-auto w-full max-w-4xl rounded-xl border border-white/[0.28] bg-white/[0.74] p-2 text-[#07080b] shadow-[inset_0_1px_0_rgba(255,255,255,0.70),0_32px_120px_rgba(0,0,0,0.44)] backdrop-blur-2xl"
-    >
-      <div className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#ff655a]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#ffbf4c]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#36c275]" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6673]">
-              Handoff CLI
-            </p>
-            <p className="mt-0.5 text-sm font-medium text-[#1f2430]">
-              {text.terminalHint as string}
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="h-9 w-fit rounded-md border border-black/10 bg-[#07080b]/[0.95] px-4 text-xs font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_10px_26px_rgba(0,0,0,0.24)] transition hover:bg-[#1a1f2a]"
-          onClick={onCopy}
-        >
-          {commandsCopied ? (text.copiedCommands as string) : (text.copyCommands as string)}
-        </button>
-      </div>
-      <div className="overflow-hidden rounded-lg border border-white/10 bg-[#050609]/[0.94] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-          <p className="font-mono text-[12px] text-[#9aa3b5]">quickstart.sh</p>
-          <span className="rounded-full border border-[#5D7EEB]/[0.25] bg-[#5D7EEB]/[0.10] px-2.5 py-1 text-[11px] font-semibold text-[#c7d9ff]">
-            {text.status as string}
-          </span>
-        </div>
-        {commands.map(([key, command]) => (
-          <CommandRow key={key} label={text[key] as string} command={command} lang={lang} />
-        ))}
-        <div className="flex flex-col gap-2 border-t border-white/10 bg-white/[0.015] px-4 py-3 text-xs text-[#8f98aa] sm:flex-row sm:items-center sm:justify-between">
-          <span>{text.cliRepoHint as string}</span>
-          <a
-            href={GITHUB_URL}
-            className="inline-flex w-fit items-center gap-1 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1 font-semibold text-[#e8edf6] transition hover:bg-white/[0.10] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
-          >
-            {text.openGithub as string}
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function HandoffLanding() {
   const [lang, setLang] = useState<Lang>(getInitialLang);
