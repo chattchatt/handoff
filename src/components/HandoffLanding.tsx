@@ -368,7 +368,7 @@ export function HandoffLanding() {
             <div className="flex justify-center">
               <Pill>{t.pricing.eyebrow}</Pill>
             </div>
-            <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
               {t.pricing.title}
             </h2>
             <p className="mt-4 text-base text-[var(--d-muted)]">{t.pricing.body}</p>
