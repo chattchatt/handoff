@@ -296,10 +296,8 @@ export function HandoffLanding() {
             <button className="hover:text-white" onClick={() => scrollToId("how")}>
               {nav.how}
             </button>
-            <button className="hover:text-white" onClick={() => scrollToId("cli")}>
-              {nav.cli}
-            </button>
             <a href={GITHUB_URL} className="hover:text-white">
+
               {nav.github}
             </a>
           </nav>
