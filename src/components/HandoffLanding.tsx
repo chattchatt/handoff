@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import { Star, Plus, Minus, Check, X, Github, LogOut } from "lucide-react";
 import { copy, type Lang } from "@/components/landing/content";
 import handoffLogo from "@/assets/handoff-logo.png";
