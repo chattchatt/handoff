@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import { callN8n, type HandoffRequest, type HandoffResponse } from "@/lib/n8n";
+import { buildIssueContent, publishGithubIssue } from "@/lib/github";
+import { Toaster } from "@/components/ui/sonner";
 
 type WorkbenchView =
   | "input"
@@ -223,6 +226,27 @@ const workbenchCopy = {
     checklistSummary: "이어받는 담당자가 확인해야 할 품질 기준입니다.",
     nextVerificationEmpty: "다음 검증 단계가 비어 있습니다.",
     verificationAction: "검증 후 근거 자료를 업데이트하세요.",
+    publishEyebrow: "Publish",
+    publishTitle: "이슈로 발행",
+    publishSummary:
+      "정리된 실행 기억을 GitHub 이슈로 발행합니다. 발행 시점에 붙여넣는 PAT만 사용하며 어디에도 저장하지 않습니다.",
+    publishRepoLabel: "대상 레포지토리",
+    publishRepoPlaceholder: "owner/repo (예: octocat/hello-world)",
+    publishTokenLabel: "GitHub PAT",
+    publishTokenPlaceholder: "ghp_... (저장되지 않음, 발행에만 사용)",
+    publishTokenHint:
+      "Fine-grained 또는 classic PAT. 브라우저 메모리에만 있다가 발행 후 사라집니다.",
+    publishIssueTitleLabel: "이슈 제목",
+    publishIssueBodyLabel: "이슈 본문 (Markdown)",
+    publishLabelsLabel: "라벨",
+    publishLabelsPlaceholder: "쉼표로 구분 (선택, 비워도 됨)",
+    publishButton: "GitHub 이슈로 발행",
+    publishing: "발행 중...",
+    publishSuccess: "이슈를 생성했습니다.",
+    publishSuccessLink: "생성된 이슈 보기",
+    publishRepoError: "대상 레포지토리를 owner/repo 형식으로 입력하세요.",
+    publishMissingFields: "레포지토리, PAT, 제목을 모두 입력하세요.",
+    publishUnknownError: "이슈 발행 중 알 수 없는 오류가 발생했습니다.",
   },
   en: {
     sidebarBody: "Turn work context into runnable state your next Agent Run can inherit.",
@@ -350,6 +374,27 @@ const workbenchCopy = {
     checklistSummary: "Quality checks the next executor should verify.",
     nextVerificationEmpty: "No next verification step was returned.",
     verificationAction: "Update the context evidence after verification.",
+    publishEyebrow: "Publish",
+    publishTitle: "Publish as GitHub issue",
+    publishSummary:
+      "Publish this execution memory as a GitHub issue. It uses only the PAT you paste at publish time and stores it nowhere.",
+    publishRepoLabel: "Target repository",
+    publishRepoPlaceholder: "owner/repo (e.g. octocat/hello-world)",
+    publishTokenLabel: "GitHub PAT",
+    publishTokenPlaceholder: "ghp_... (not stored, used only to publish)",
+    publishTokenHint:
+      "Fine-grained or classic PAT. Held in browser memory only and gone after publishing.",
+    publishIssueTitleLabel: "Issue title",
+    publishIssueBodyLabel: "Issue body (Markdown)",
+    publishLabelsLabel: "Labels",
+    publishLabelsPlaceholder: "comma-separated (optional, can be empty)",
+    publishButton: "Publish GitHub issue",
+    publishing: "Publishing...",
+    publishSuccess: "Issue created.",
+    publishSuccessLink: "View created issue",
+    publishRepoError: "Enter the target repository as owner/repo.",
+    publishMissingFields: "Enter the repository, PAT, and title.",
+    publishUnknownError: "An unknown error occurred while publishing the issue.",
   },
 } satisfies Record<Lang, Record<string, string>>;
 
@@ -670,6 +715,173 @@ const IMPORTANCE_STYLE: Record<Importance, { bar: string; badge: string }> = {
     badge: "border-[#7D98EE]/[0.45] bg-[#7D98EE]/[0.16] text-white",
   },
 };
+
+function GitHubPublishCard({
+  result,
+  meetingTitle,
+  lang,
+  t,
+}: {
+  result: HandoffResponse;
+  meetingTitle: string;
+  lang: Lang;
+  t: (typeof workbenchCopy)[Lang];
+}) {
+  const prefill = useMemo(
+    () => buildIssueContent(result, meetingTitle, lang),
+    [result, meetingTitle, lang],
+  );
+  const [repo, setRepo] = useState("");
+  // PAT lives in local component state only — never persisted or logged.
+  const [token, setToken] = useState("");
+  const [labels, setLabels] = useState("");
+  const [title, setTitle] = useState(prefill.title);
+  const [body, setBody] = useState(prefill.body);
+  const [publishing, setPublishing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [issueUrl, setIssueUrl] = useState<string | null>(null);
+
+  async function handlePublish() {
+    setErrorMessage(null);
+    setIssueUrl(null);
+
+    const match = repo.trim().match(/^([^/\s]+)\/([^/\s]+)$/);
+    if (!match) {
+      setErrorMessage(t.publishRepoError);
+      toast.error(t.publishRepoError);
+      return;
+    }
+    if (!token.trim() || !title.trim()) {
+      setErrorMessage(t.publishMissingFields);
+      toast.error(t.publishMissingFields);
+      return;
+    }
+
+    const parsedLabels = labels
+      .split(",")
+      .map((label) => label.trim())
+      .filter(Boolean);
+
+    setPublishing(true);
+    try {
+      const res = await publishGithubIssue({
+        data: {
+          owner: match[1],
+          repo: match[2],
+          token: token.trim(),
+          title: title.trim(),
+          body,
+          labels: parsedLabels.length > 0 ? parsedLabels : undefined,
+        },
+      });
+      if (res.ok && res.issueUrl) {
+        setIssueUrl(res.issueUrl);
+        toast.success(t.publishSuccess);
+      } else {
+        const message = res.errorMessage || t.publishUnknownError;
+        setErrorMessage(message);
+        toast.error(message);
+      }
+    } catch {
+      setErrorMessage(t.publishUnknownError);
+      toast.error(t.publishUnknownError);
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  const fieldClass = `w-full rounded-md px-3 py-2 text-sm text-[#e8edf6] placeholder:text-[#6b7587] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/60 ${glassField}`;
+
+  return (
+    <article className={`relative overflow-hidden rounded-xl p-6 ${glassPanel}`}>
+      <div className="mb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7d98ee]">
+          {t.publishEyebrow}
+        </p>
+        <h3 className="mt-1 text-xl font-bold text-[#f6f4ee]">{t.publishTitle}</h3>
+        <p className="mt-2 text-sm leading-6 text-[#c7cfdd]">{t.publishSummary}</p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium text-[#a8b2c4]">{t.publishRepoLabel}</span>
+          <input
+            className={fieldClass}
+            type="text"
+            autoComplete="off"
+            placeholder={t.publishRepoPlaceholder}
+            value={repo}
+            onChange={(event) => setRepo(event.target.value)}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium text-[#a8b2c4]">{t.publishTokenLabel}</span>
+          <input
+            className={fieldClass}
+            type="password"
+            autoComplete="off"
+            placeholder={t.publishTokenPlaceholder}
+            value={token}
+            onChange={(event) => setToken(event.target.value)}
+          />
+          <span className="text-[11px] leading-4 text-[#7d8798]">{t.publishTokenHint}</span>
+        </label>
+      </div>
+      <label className="mt-4 flex flex-col gap-1.5">
+        <span className="text-xs font-medium text-[#a8b2c4]">{t.publishIssueTitleLabel}</span>
+        <input
+          className={fieldClass}
+          type="text"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+        />
+      </label>
+      <label className="mt-4 flex flex-col gap-1.5">
+        <span className="text-xs font-medium text-[#a8b2c4]">{t.publishIssueBodyLabel}</span>
+        <textarea
+          className={`${fieldClass} min-h-[180px] resize-y font-mono leading-relaxed`}
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+        />
+      </label>
+      <label className="mt-4 flex flex-col gap-1.5">
+        <span className="text-xs font-medium text-[#a8b2c4]">{t.publishLabelsLabel}</span>
+        <input
+          className={fieldClass}
+          type="text"
+          autoComplete="off"
+          placeholder={t.publishLabelsPlaceholder}
+          value={labels}
+          onChange={(event) => setLabels(event.target.value)}
+        />
+      </label>
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <button
+          type="button"
+          onClick={handlePublish}
+          disabled={publishing}
+          className="rounded-md border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.18] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#5D7EEB]/[0.30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {publishing ? t.publishing : t.publishButton}
+        </button>
+        {issueUrl && (
+          <a
+            href={issueUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-semibold text-[#9db4ff] underline underline-offset-4 hover:text-[#bccbff]"
+          >
+            {t.publishSuccessLink} →
+          </a>
+        )}
+      </div>
+      {errorMessage && (
+        <p className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm leading-relaxed text-red-200">
+          {errorMessage}
+        </p>
+      )}
+    </article>
+  );
+}
 
 function CopyButton({
   label,
@@ -1149,6 +1361,7 @@ export function HandoffDemo({
 
   const shell = (content: ReactNode) => (
     <main className="min-h-screen bg-[#1A1F31] bg-[radial-gradient(circle_at_16%_10%,rgba(255,255,255,0.08),transparent_22%),radial-gradient(circle_at_86%_8%,rgba(143,179,255,0.08),transparent_28%),linear-gradient(180deg,#1A1F31,#05070b)] text-[#f6f4ee]">
+      <Toaster />
       {showDebugPanel && (
         <DebugPanel
           loading={loading}
@@ -1639,6 +1852,9 @@ export function HandoffDemo({
             {t.countSuffix} {t.missingEvidence}
             {result.harness.nextVerificationStep ? ` · ${result.harness.nextVerificationStep}` : ""}
           </p>
+        </div>
+        <div className="xl:col-span-2">
+          <GitHubPublishCard result={result} meetingTitle={meetingTitle} lang={lang} t={t} />
         </div>
       </div>
     </>
