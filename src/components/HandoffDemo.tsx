@@ -158,6 +158,15 @@ const workbenchCopy = {
     executionRequests: "후속 작업",
     evidenceLedger: "근거 자료",
     nextExecution: "AI 호출용 프롬프트",
+    agentPrompt: "AI 에이전트 실행 프롬프트",
+    agentPromptSummary:
+      "이 프롬프트를 AI 에이전트에게 그대로 전달하면 작업을 바로 실행합니다. 사람용 Todo가 아니라 실행 입력입니다.",
+    agentPromptCopy: "프롬프트 복사",
+    agentPromptCopied: "복사됨",
+    agentPromptEmpty: "AI 에이전트 실행 프롬프트가 비어 있습니다.",
+    resumePrompt: "이어받기 프롬프트 (resume)",
+    resumePromptCopy: "이어받기 복사",
+    resumePromptHint: "다음 세션을 이어받을 때 사용하는 보조 프롬프트입니다.",
     missingContext: "보완 필요 사항",
     risks: "리스크",
     draftMessage: "전달 메시지",
@@ -189,9 +198,6 @@ const workbenchCopy = {
     historyReopen: "다시 보기",
     historyDelete: "삭제",
     historyClearAll: "전체 비우기",
-    rawResponse: "응답 원본",
-    showJson: "원본 JSON 보기",
-    hideJson: "원본 JSON 숨기기",
     noItems: "아직 반환된 항목이 없습니다.",
     goalEvidence: "입력 맥락에서 목표와 현재 상태를 추출했습니다.",
     goalAction: "목표와 제약을 확인한 뒤 후속 작업으로 넘기세요.",
@@ -280,6 +286,15 @@ const workbenchCopy = {
     executionRequests: "Follow-up Tasks",
     evidenceLedger: "Context / Evidence",
     nextExecution: "AI Prompt",
+    agentPrompt: "AI Agent Run Prompt",
+    agentPromptSummary:
+      "Hand this prompt to an AI agent and it runs the work directly. This is an execution input, not a human todo list.",
+    agentPromptCopy: "Copy prompt",
+    agentPromptCopied: "Copied",
+    agentPromptEmpty: "The AI agent run prompt is empty.",
+    resumePrompt: "Resume prompt",
+    resumePromptCopy: "Copy resume",
+    resumePromptHint: "Secondary prompt for continuing in the next session.",
     missingContext: "Missing Context",
     risks: "Risks",
     draftMessage: "Draft message",
@@ -310,9 +325,6 @@ const workbenchCopy = {
     historyReopen: "Reopen",
     historyDelete: "Delete",
     historyClearAll: "Clear all",
-    rawResponse: "Raw response",
-    showJson: "Show raw JSON",
-    hideJson: "Hide raw JSON",
     noItems: "No returned items yet.",
     goalEvidence: "The goal and current state were extracted from the input context.",
     goalAction: "Review the goal and constraints, then pass them into follow-up tasks.",
@@ -659,6 +671,37 @@ const IMPORTANCE_STYLE: Record<Importance, { bar: string; badge: string }> = {
   },
 };
 
+function CopyButton({
+  label,
+  copiedLabel,
+  onCopy,
+}: {
+  label: string;
+  copiedLabel: string;
+  onCopy: () => Promise<boolean>;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleClick() {
+    const ok = await onCopy();
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="rounded-md border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.14] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#5D7EEB]/[0.24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+      aria-label={label}
+    >
+      {copied ? copiedLabel : label}
+    </button>
+  );
+}
+
 function WorkbenchCard({
   eyebrow,
   title,
@@ -778,7 +821,6 @@ function DebugPanel({
   result: HandoffResponse | null;
   onTest: () => Promise<void>;
 }) {
-  const root = asRecord(rawResult);
   const responseError = result?._error;
   const warnings = result?._warnings ?? [];
   const success =
@@ -842,7 +884,7 @@ function DebugPanel({
         )}
 
         <p className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-[#7d8798] backdrop-blur-xl">
-          {root._raw ? "raw payload included" : "no raw payload"}
+          {rawResult ? "response received" : "no response yet"}
         </p>
         <button
           className="rounded-md border border-white/10 px-3 py-2 font-semibold text-[#e8edf6] hover:bg-white/[0.06] disabled:opacity-50"
@@ -884,7 +926,6 @@ export function HandoffDemo({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rawResult, setRawResult] = useState<unknown>(null);
-  const [showJson, setShowJson] = useState(false);
   const t = workbenchCopy[lang];
   const deliveryOptions = deliveryOptionsByLang[lang];
   const navItems = navItemsByLang[lang];
@@ -1067,7 +1108,6 @@ export function HandoffDemo({
     setCopyStatus("idle");
     setRawResult(null);
     setError(null);
-    setShowJson(false);
     setActiveView("input");
   }
 
@@ -1081,7 +1121,6 @@ export function HandoffDemo({
     setFileNotice("");
     setCopyStatus("idle");
     setError(null);
-    setShowJson(false);
     setActiveView("dashboard");
   }
 
@@ -1451,9 +1490,61 @@ export function HandoffDemo({
     </div>
   );
 
+  const agentPromptText = result.deliverablePack.lovablePrompt || result.deliverablePack.prd;
+  const resumePromptText = result.executionMemory.continuationPrompt;
+
   const dashboard = (
     <>
       {summaryStrip}
+      {agentPromptText && (
+        <article className="relative mb-5 overflow-hidden rounded-xl border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.08] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_24px_70px_rgba(93,126,235,0.20)] backdrop-blur-2xl">
+          <span
+            aria-hidden
+            className={`absolute inset-y-0 left-0 w-[3px] ${IMPORTANCE_STYLE.prompt.bar}`}
+          />
+          <div className="mb-3 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7d98ee]">
+                Agent Run
+              </p>
+              <h3 className="mt-1 text-xl font-bold text-[#f6f4ee]">{t.agentPrompt}</h3>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span
+                className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${IMPORTANCE_STYLE.prompt.badge}`}
+              >
+                {t.importancePrompt}
+              </span>
+              <CopyButton
+                label={t.agentPromptCopy}
+                copiedLabel={t.agentPromptCopied}
+                onCopy={() => copyText(agentPromptText || t.agentPromptEmpty)}
+              />
+            </div>
+          </div>
+          <p className="mb-4 text-sm leading-6 text-[#c7cfdd]">{t.agentPromptSummary}</p>
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md border border-white/10 bg-white/[0.04] p-4 text-sm leading-relaxed text-[#e8edf6]">
+            {agentPromptText}
+          </pre>
+          {resumePromptText && (
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7d8798]">
+                    {t.resumePrompt}
+                  </p>
+                  <p className="mt-1 text-xs text-[#a8b2c4]">{t.resumePromptHint}</p>
+                </div>
+                <CopyButton
+                  label={t.resumePromptCopy}
+                  copiedLabel={t.agentPromptCopied}
+                  onCopy={() => copyText(resumePromptText)}
+                />
+              </div>
+            </div>
+          )}
+        </article>
+      )}
       <div className="grid gap-4 xl:grid-cols-2">
         <WorkbenchCard
           eyebrow="Summary"
@@ -1542,66 +1633,13 @@ export function HandoffDemo({
           <ListBlock items={result.meetingUnderstanding.missingInfo.slice(0, 4)} tone="warn" />
         </WorkbenchCard>
         <div className="xl:col-span-2">
-          <WorkbenchCard
-            eyebrow="Context / Evidence"
-            title={t.evidenceLedger}
-            summary={t.ledgerSummary}
-            evidence={`${result.harness.doneEvidence.length}${t.countSuffix} ${t.doneEvidence}, ${result.harness.missingEvidence.length}${t.countSuffix} ${t.missingEvidence}`}
-            action={result.harness.nextVerificationStep || t.ledgerAction}
-            status={result.harness.missingEvidence.length > 0 ? "Needs evidence" : "Ready"}
-            labels={cardLabels}
-            importance="confirmed"
-            importanceLabel={t.importanceConfirmed}
-            copyLabel={t.copyCard}
-            copiedLabel={t.copiedCard}
-            onCopy={() =>
-              copyText(
-                buildCardText(t.evidenceLedger, [
-                  ...result.harness.doneEvidence.map((s) => `[done] ${s}`),
-                  ...result.harness.missingEvidence.map((s) => `[missing] ${s}`),
-                ]),
-              )
-            }
-          >
-            <ListBlock
-              items={[...result.harness.doneEvidence, ...result.harness.missingEvidence].slice(
-                0,
-                4,
-              )}
-              tone={result.harness.missingEvidence.length > 0 ? "warn" : "good"}
-            />
-          </WorkbenchCard>
+          <p className="px-1 text-xs text-[#7d8798]">
+            {result.harness.doneEvidence.length}
+            {t.countSuffix} {t.doneEvidence} · {result.harness.missingEvidence.length}
+            {t.countSuffix} {t.missingEvidence}
+            {result.harness.nextVerificationStep ? ` · ${result.harness.nextVerificationStep}` : ""}
+          </p>
         </div>
-        {result.executionMemory.continuationPrompt && (
-          <div className="xl:col-span-2">
-            <WorkbenchCard
-              eyebrow="AI Prompt"
-              title={t.nextExecution}
-              summary={result.executionMemory.continuationPrompt || t.nextRunEmpty}
-              evidence={
-                result.executionMemory.previousContextUsed
-                  ? t.previousContextYes
-                  : t.previousContextNo
-              }
-              action={t.nextRunAction}
-              labels={cardLabels}
-              importance="prompt"
-              importanceLabel={t.importancePrompt}
-              copyLabel={t.copyCard}
-              copiedLabel={t.copiedCard}
-              onCopy={() =>
-                copyText(
-                  buildCardText(t.nextExecution, [
-                    result.executionMemory.continuationPrompt,
-                    ...result.executionMemory.nextActions,
-                  ]),
-                )
-              }
-            >
-              <ListBlock items={result.executionMemory.nextActions} />
-            </WorkbenchCard>
-          </div>
-        )}
       </div>
     </>
   );
@@ -1760,27 +1798,6 @@ export function HandoffDemo({
             labels={cardLabels}
           />
         </div>
-        <article className={`mt-4 rounded-xl p-5 ${glassPanel}`}>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7d8798]">
-                Raw JSON
-              </p>
-              <h3 className="mt-1 text-lg font-semibold text-[#f6f4ee]">{t.rawResponse}</h3>
-            </div>
-            <button
-              className="rounded-md border border-white/[0.12] bg-white/[0.04] px-3 py-2 text-sm text-[#d9deea] backdrop-blur-xl hover:bg-white/[0.07]"
-              onClick={() => setShowJson((value) => !value)}
-            >
-              {showJson ? t.hideJson : t.showJson}
-            </button>
-          </div>
-          {showJson && (
-            <pre className="mt-4 max-h-96 overflow-auto rounded-md bg-[#05070b] p-4 text-xs text-[#d9deea]">
-              {JSON.stringify(rawResult, null, 2)}
-            </pre>
-          )}
-        </article>
       </>
     ),
   };
