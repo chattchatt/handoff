@@ -125,35 +125,34 @@
 }
 
 @layer components {
-  /* ---- daval.cloud warm editorial landing theme (scoped) ---- */
+  /* ---- landing layout, mapped onto the existing dark design system ---- */
   .daval-landing {
-    --d-bg: #f6f1e8;
-    --d-bg-2: #f1eadd;
-    --d-surface: #efe7d8;
-    --d-surface-2: #e9e0cf;
-    --d-fg: #2c2118;
-    --d-muted: #8b8378;
-    --d-faded: #c8c1b4;
-    --d-primary: #33271d;
-    --d-primary-fg: #f6f1e8;
-    --d-border: rgba(44, 33, 24, 0.1);
-    --d-border-strong: rgba(44, 33, 24, 0.16);
+    --d-bg: var(--background);
+    --d-bg-2: var(--surface);
+    --d-surface: var(--surface-2);
+    --d-surface-2: var(--surface-3);
+    --d-fg: var(--foreground);
+    --d-muted: var(--muted-foreground);
+    --d-faded: oklch(0.42 0.012 270);
+    --d-primary: var(--primary);
+    --d-primary-fg: var(--primary-foreground);
+    --d-border: var(--border);
+    --d-border-strong: var(--border-strong);
 
-    background-color: var(--d-bg);
-    color: var(--d-fg);
-    font-family:
-      "Pretendard", "Pretendard Variable", ui-sans-serif, system-ui, -apple-system,
-      "Segoe UI", Roboto, sans-serif;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
 
   .daval-landing ::selection {
-    background: color-mix(in oklab, var(--d-primary) 22%, transparent);
+    background: color-mix(in oklab, var(--primary) 40%, transparent);
   }
 
   .font-serif-accent {
-    font-family: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
-    font-weight: 400;
+    font-family: var(--font-sans);
+    color: var(--primary);
+    font-weight: 600;
   }
 
   .panel {
