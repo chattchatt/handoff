@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Github, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { callN8n, type HandoffRequest, type HandoffResponse } from "@/lib/n8n";
-import { buildIssueContent, publishGithubIssue } from "@/lib/github";
+import {
+  buildIssueContent,
+  createGithubIssue,
+  listGithubRepos,
+  type GithubRepo,
+} from "@/lib/github";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/lib/use-auth";
 import { getSupabase } from "@/lib/supabase";
@@ -256,7 +261,15 @@ const workbenchCopy = {
     publishEyebrow: "Publish",
     publishTitle: "이슈로 발행",
     publishSummary:
-      "정리된 실행 기억을 GitHub 이슈로 발행합니다. 발행 시점에 붙여넣는 PAT만 사용하며 어디에도 저장하지 않습니다.",
+      "정리된 작업을 내 GitHub 저장소에 이슈로 발행합니다. 로그인한 GitHub 계정으로 바로 연결됩니다.",
+    publishConnectPrompt: "GitHub로 연결하면 내 저장소를 골라 바로 이슈를 발행할 수 있어요.",
+    publishConnectButton: "GitHub로 연결",
+    publishReconnectPrompt: "GitHub 연결이 만료됐어요. 다시 연결하면 저장소를 불러옵니다.",
+    publishReconnectButton: "GitHub 다시 연결",
+    publishRepoSelectLabel: "발행할 저장소",
+    publishRepoLoading: "저장소 불러오는 중...",
+    publishRepoEmpty: "접근 가능한 저장소가 없습니다.",
+    publishSelectRepoError: "발행할 저장소를 선택하세요.",
     publishRepoLabel: "대상 레포지토리",
     publishRepoPlaceholder: "owner/repo (예: octocat/hello-world)",
     publishTokenLabel: "GitHub PAT",
@@ -445,7 +458,15 @@ const workbenchCopy = {
     publishEyebrow: "Publish",
     publishTitle: "Publish as GitHub issue",
     publishSummary:
-      "Publish this execution memory as a GitHub issue. It uses only the PAT you paste at publish time and stores it nowhere.",
+      "Publish the organized work as an issue in your GitHub repo. It connects directly with your signed-in GitHub account.",
+    publishConnectPrompt: "Connect GitHub to pick one of your repositories and publish the issue.",
+    publishConnectButton: "Connect GitHub",
+    publishReconnectPrompt: "Your GitHub connection expired. Reconnect to load your repositories.",
+    publishReconnectButton: "Reconnect GitHub",
+    publishRepoSelectLabel: "Repository to publish to",
+    publishRepoLoading: "Loading repositories...",
+    publishRepoEmpty: "No accessible repositories.",
+    publishSelectRepoError: "Select a repository to publish to.",
     publishRepoLabel: "Target repository",
     publishRepoPlaceholder: "owner/repo (e.g. octocat/hello-world)",
     publishTokenLabel: "GitHub PAT",
@@ -1073,19 +1094,21 @@ function GitHubPublishCard({
   meetingTitle,
   lang,
   t,
+  auth,
 }: {
   result: HandoffResponse;
   meetingTitle: string;
   lang: Lang;
   t: (typeof workbenchCopy)[Lang];
+  auth: ReturnType<typeof useAuth>;
 }) {
   const prefill = useMemo(
     () => buildIssueContent(result, meetingTitle, lang),
     [result, meetingTitle, lang],
   );
   const [repo, setRepo] = useState("");
-  // PAT lives in local component state only — never persisted or logged.
-  const [token, setToken] = useState("");
+  const [repos, setRepos] = useState<GithubRepo[]>([]);
+  const [reposLoading, setReposLoading] = useState(false);
   const [labels, setLabels] = useState("");
   const [title, setTitle] = useState(prefill.title);
   const [body, setBody] = useState(prefill.body);
@@ -1093,17 +1116,47 @@ function GitHubPublishCard({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [issueUrl, setIssueUrl] = useState<string | null>(null);
 
+  const providerToken = auth.providerToken;
+  const connected = auth.loggedIn && Boolean(providerToken);
+
+  // Load the user's repositories once GitHub is connected.
+  useEffect(() => {
+    if (!providerToken) {
+      setRepos([]);
+      return;
+    }
+    let active = true;
+    setReposLoading(true);
+    setErrorMessage(null);
+    listGithubRepos(providerToken)
+      .then((list) => {
+        if (!active) return;
+        setRepos(list);
+        setRepo((current) => current || list[0]?.fullName || "");
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        setErrorMessage(err instanceof Error ? err.message : t.publishUnknownError);
+      })
+      .finally(() => {
+        if (active) setReposLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [providerToken, t.publishUnknownError]);
+
   async function handlePublish() {
     setErrorMessage(null);
     setIssueUrl(null);
 
     const match = repo.trim().match(/^([^/\s]+)\/([^/\s]+)$/);
     if (!match) {
-      setErrorMessage(t.publishRepoError);
-      toast.error(t.publishRepoError);
+      setErrorMessage(t.publishSelectRepoError);
+      toast.error(t.publishSelectRepoError);
       return;
     }
-    if (!token.trim() || !title.trim()) {
+    if (!providerToken || !title.trim()) {
       setErrorMessage(t.publishMissingFields);
       toast.error(t.publishMissingFields);
       return;
@@ -1116,15 +1169,13 @@ function GitHubPublishCard({
 
     setPublishing(true);
     try {
-      const res = await publishGithubIssue({
-        data: {
-          owner: match[1],
-          repo: match[2],
-          token: token.trim(),
-          title: title.trim(),
-          body,
-          labels: parsedLabels.length > 0 ? parsedLabels : undefined,
-        },
+      const res = await createGithubIssue({
+        token: providerToken,
+        owner: match[1],
+        repo: match[2],
+        title: title.trim(),
+        body,
+        labels: parsedLabels.length > 0 ? parsedLabels : undefined,
       });
       if (res.ok && res.issueUrl) {
         setIssueUrl(res.issueUrl);
@@ -1153,79 +1204,95 @@ function GitHubPublishCard({
         <h3 className="mt-1 text-xl font-bold text-[#f6f4ee]">{t.publishTitle}</h3>
         <p className="mt-2 text-sm leading-6 text-[#c7cfdd]">{t.publishSummary}</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-[#a8b2c4]">{t.publishRepoLabel}</span>
-          <input
-            className={fieldClass}
-            type="text"
-            autoComplete="off"
-            placeholder={t.publishRepoPlaceholder}
-            value={repo}
-            onChange={(event) => setRepo(event.target.value)}
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-[#a8b2c4]">{t.publishTokenLabel}</span>
-          <input
-            className={fieldClass}
-            type="password"
-            autoComplete="off"
-            placeholder={t.publishTokenPlaceholder}
-            value={token}
-            onChange={(event) => setToken(event.target.value)}
-          />
-          <span className="text-[11px] leading-4 text-[#7d8798]">{t.publishTokenHint}</span>
-        </label>
-      </div>
-      <label className="mt-4 flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-[#a8b2c4]">{t.publishIssueTitleLabel}</span>
-        <input
-          className={fieldClass}
-          type="text"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-        />
-      </label>
-      <label className="mt-4 flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-[#a8b2c4]">{t.publishIssueBodyLabel}</span>
-        <textarea
-          className={`${fieldClass} min-h-[180px] resize-y font-mono leading-relaxed`}
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-        />
-      </label>
-      <label className="mt-4 flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-[#a8b2c4]">{t.publishLabelsLabel}</span>
-        <input
-          className={fieldClass}
-          type="text"
-          autoComplete="off"
-          placeholder={t.publishLabelsPlaceholder}
-          value={labels}
-          onChange={(event) => setLabels(event.target.value)}
-        />
-      </label>
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={handlePublish}
-          disabled={publishing}
-          className="rounded-md border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.18] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#5D7EEB]/[0.30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {publishing ? t.publishing : t.publishButton}
-        </button>
-        {issueUrl && (
-          <a
-            href={issueUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-semibold text-[#9db4ff] underline underline-offset-4 hover:text-[#bccbff]"
+
+      {!connected ? (
+        <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-white/[0.16] bg-white/[0.035] p-5">
+          <p className="text-sm leading-6 text-[#c7cfdd]">
+            {auth.loggedIn ? t.publishReconnectPrompt : t.publishConnectPrompt}
+          </p>
+          <button
+            type="button"
+            onClick={() => void auth.login()}
+            className="inline-flex items-center gap-2 rounded-md border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.18] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#5D7EEB]/[0.30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70"
           >
-            {t.publishSuccessLink} →
-          </a>
-        )}
-      </div>
+            <Github className="h-4 w-4" />
+            {auth.loggedIn ? t.publishReconnectButton : t.publishConnectButton}
+          </button>
+        </div>
+      ) : (
+        <>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-[#a8b2c4]">{t.publishRepoSelectLabel}</span>
+            <select
+              className={fieldClass}
+              value={repo}
+              disabled={reposLoading || repos.length === 0}
+              onChange={(event) => setRepo(event.target.value)}
+            >
+              {reposLoading && <option value="">{t.publishRepoLoading}</option>}
+              {!reposLoading && repos.length === 0 && (
+                <option value="">{t.publishRepoEmpty}</option>
+              )}
+              {!reposLoading &&
+                repos.map((r) => (
+                  <option key={r.fullName} value={r.fullName}>
+                    {r.fullName}
+                    {r.private ? " 🔒" : ""}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label className="mt-4 flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-[#a8b2c4]">{t.publishIssueTitleLabel}</span>
+            <input
+              className={fieldClass}
+              type="text"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          </label>
+          <label className="mt-4 flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-[#a8b2c4]">{t.publishIssueBodyLabel}</span>
+            <textarea
+              className={`${fieldClass} min-h-[180px] resize-y font-mono leading-relaxed`}
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+            />
+          </label>
+          <label className="mt-4 flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-[#a8b2c4]">{t.publishLabelsLabel}</span>
+            <input
+              className={fieldClass}
+              type="text"
+              autoComplete="off"
+              placeholder={t.publishLabelsPlaceholder}
+              value={labels}
+              onChange={(event) => setLabels(event.target.value)}
+            />
+          </label>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={publishing || reposLoading || !repo}
+              className="rounded-md border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.18] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#5D7EEB]/[0.30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {publishing ? t.publishing : t.publishButton}
+            </button>
+            {issueUrl && (
+              <a
+                href={issueUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-[#9db4ff] underline underline-offset-4 hover:text-[#bccbff]"
+              >
+                {t.publishSuccessLink} →
+              </a>
+            )}
+          </div>
+        </>
+      )}
+
       {errorMessage && (
         <p className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm leading-relaxed text-red-200">
           {errorMessage}
@@ -2272,7 +2339,13 @@ export function HandoffDemo({
         </article>
       )}
       <VerificationTable result={result} t={t} />
-      <GitHubPublishCard result={result} meetingTitle={meetingTitle} lang={lang} t={t} />
+      <GitHubPublishCard
+        result={result}
+        meetingTitle={meetingTitle}
+        lang={lang}
+        t={t}
+        auth={auth}
+      />
     </>
   );
 

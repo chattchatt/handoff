@@ -29,20 +29,88 @@ export type PublishIssueResult = {
   errorMessage?: string;
 };
 
-// Friendly, token-free messages. The PAT is never echoed back in any branch.
+// Friendly, token-free messages. The access token is never echoed back in any branch.
 function messageForStatus(status: number): string {
   switch (status) {
     case 401:
-      return "GitHub 인증에 실패했습니다. PAT가 잘못되었거나 만료되었습니다. (Authentication failed — the personal access token is invalid or expired.)";
+      return "GitHub 인증이 만료됐습니다. GitHub를 다시 연결해 주세요. (Authentication expired — reconnect GitHub.)";
     case 403:
-      return "권한이 없거나 요청 한도를 초과했습니다. 토큰 스코프와 rate limit을 확인하세요. (Forbidden — check token scope and rate limits.)";
+      return "권한이 없거나 요청 한도를 초과했습니다. repo 권한과 rate limit을 확인하세요. (Forbidden — check repo permission and rate limits.)";
     case 404:
-      return "레포지토리를 찾을 수 없거나 접근 권한이 없습니다. owner/repo와 토큰 권한을 확인하세요. (Repository not found or no access.)";
+      return "레포지토리를 찾을 수 없거나 접근 권한이 없습니다. (Repository not found or no access.)";
     case 422:
       return "이슈 내용을 검증할 수 없습니다. 제목/본문 또는 라벨을 확인하세요. (Validation failed — check the title, body, or labels.)";
     default:
       return `GitHub 이슈 생성에 실패했습니다 (HTTP ${status}). (Failed to create the GitHub issue.)`;
   }
+}
+
+const githubApiHeaders = (token: string): HeadersInit => ({
+  Authorization: `Bearer ${token}`,
+  Accept: "application/vnd.github+json",
+  "X-GitHub-Api-Version": "2022-11-28",
+});
+
+export type GithubRepo = { fullName: string; private: boolean };
+
+/**
+ * List repositories the signed-in user can open issues on, newest first.
+ * Browser-side fetch using the OAuth session token (GitHub REST supports CORS).
+ */
+export async function listGithubRepos(token: string): Promise<GithubRepo[]> {
+  const res = await fetch(
+    "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member",
+    { headers: githubApiHeaders(token) },
+  );
+  if (!res.ok) throw new Error(messageForStatus(res.status));
+  const json = (await res.json()) as Array<{ full_name?: string; private?: boolean }>;
+  return json
+    .filter((r): r is { full_name: string; private?: boolean } => Boolean(r.full_name))
+    .map((r) => ({ fullName: r.full_name, private: Boolean(r.private) }));
+}
+
+/**
+ * Create a GitHub issue directly from the browser using the OAuth session token.
+ * Replaces the server function so it works on hosts that don't run server code
+ * (e.g. lovable.app). The token is used only for this request and never stored.
+ */
+export async function createGithubIssue(args: {
+  token: string;
+  owner: string;
+  repo: string;
+  title: string;
+  body: string;
+  labels?: string[];
+}): Promise<PublishIssueResult> {
+  const payload: Record<string, unknown> = { title: args.title, body: args.body };
+  if (args.labels && args.labels.length > 0) payload.labels = args.labels;
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://api.github.com/repos/${encodeURIComponent(args.owner)}/${encodeURIComponent(args.repo)}/issues`,
+      {
+        method: "POST",
+        headers: { ...githubApiHeaders(args.token), "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
+  } catch {
+    return {
+      ok: false,
+      errorMessage:
+        "GitHub에 연결하지 못했습니다. 네트워크 상태를 확인한 뒤 다시 시도하세요. (Could not reach GitHub — check your connection and retry.)",
+    };
+  }
+
+  if (!response.ok) return { ok: false, errorMessage: messageForStatus(response.status) };
+
+  const json = (await response.json().catch(() => null)) as {
+    html_url?: string;
+    number?: number;
+  } | null;
+
+  return { ok: true, issueUrl: json?.html_url, issueNumber: json?.number };
 }
 
 /**
