@@ -384,14 +384,14 @@ export function HandoffLanding() {
         </div>
       </section>
 
-      <section id="preview" className="relative z-10 mx-auto max-w-7xl px-5 py-16">
+      <SectionConnector />
+
+      <section id="preview" className="relative z-10 mx-auto max-w-7xl scroll-mt-24 px-5 pb-14 pt-6">
         <div
           className={`grid gap-6 rounded-xl p-6 lg:grid-cols-[0.82fr_1.18fr] lg:p-8 ${glassSurface}`}
         >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
-              {text.previewEyebrow as string}
-            </p>
+            <SectionEyebrow index="02" label={text.previewEyebrow as string} />
             <h2 className="mt-3 text-2xl font-semibold md:text-3xl">
               {text.previewTitle as string}
             </h2>
