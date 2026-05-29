@@ -5,6 +5,7 @@ export type ProcessRow = {
   label: string;
   title: string;
   body: string;
+  video?: string;
 };
 
 export type Service = {
