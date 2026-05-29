@@ -380,16 +380,16 @@ export const copy: Record<Lang, Content> = {
     },
     comparison: {
       eyebrow: "WHY HANDOFF",
-      title: "Compare with handing off blind.",
-      body: "Work handed off without context gets re-asked. See the difference with HandOff.",
-      leftTitle: "Hand off by hand",
-      leftChips: ["Lost context", "Repeated questions", "Scattered evidence", "Not reproducible"],
+      title: "Compare it to just throwing it in.",
+      body: "Dumping it whole is like telling a new hire 'figure it all out.' See the difference.",
+      leftTitle: "Throw it in a prompt",
+      leftChips: ["One blob result", "Shallow todos", "Missing context", "Carry it alone"],
       leftBody:
-        "Transcripts are long, decisions are scattered, and no one knows what's done. The next person starts over.",
-      rightTitle: "Hand off with HandOff",
-      rightChips: ["Structured memory", "Instant AI run", "Evidence tracking", "GitHub publishing"],
+        "Throw it at an AI whole and you get a single blob of a todo list. Shallow, with no idea what's missing. You end up carrying it all.",
+      rightTitle: "Hand it off with HandOff",
+      rightChips: ["Split-up tasks", "Done conditions", "GitHub issues", "People + AI"],
       rightBody:
-        "Goals, decisions, tasks, and evidence in one state. The next person or AI picks up without asking.",
+        "Split well, specced, verified, and published as GitHub issues. People and AI agents pick it up at once and get it done together.",
     },
     faq: {
       eyebrow: "FAQ",
@@ -398,23 +398,23 @@ export const copy: Record<Lang, Content> = {
       items: [
         {
           q: "What is HandOff?",
-          a: "HandOff is an Agent Handoff Workbench. It turns scattered work context into execution memory — goals, decisions, follow-up tasks, and evidence — that the next person or AI agent can inherit as-is.",
+          a: "Instead of re-organizing meeting notes, PDFs, and scattered memos, just hand them off — and your team of people and AI agents picks up the work.",
         },
         {
-          q: "What can I feed it?",
-          a: "Paste meeting notes, customer memos, Slack threads, issue descriptions, or work requests, or upload PDF, DOCX, XLSX, and TXT files.",
+          q: "How is it different from pasting into ChatGPT?",
+          a: "ChatGPT gives you one blob of a todo list. HandOff handles real documents (PDFs, tables, Korean), splits the work into executable tasks, and publishes them as GitHub issues.",
         },
         {
-          q: "How are documents analyzed?",
-          a: "An n8n runtime reads files with Upstage Document Parse, structures key details with Information Extract, then converts them into execution memory with the Solar LLM.",
+          q: "How are documents processed?",
+          a: "Upstage Document Parse reads, Information Extract pulls out tasks, and Solar writes the issues. Read · Extract · Write, in one flow.",
         },
         {
-          q: "What is the AI run prompt?",
-          a: "It's not a human todo list — it's an execution input you can hand straight to an AI agent to run the work immediately.",
+          q: "Does the AI finish everything once it's published?",
+          a: "No. HandOff produces tasks precisely enough for people and agents to pick up. Execution after the issue is handled by people and coding agents on GitHub.",
         },
         {
           q: "Can I publish to GitHub?",
-          a: "Yes. Publish your execution memory to a GitHub issue in one click. Only the PAT you enter at publish time is used, and it's never stored.",
+          a: "Yes. Publish structured tasks to a GitHub issue in one click. Only the PAT you enter at publish time is used, and it's never stored.",
         },
         {
           q: "Is my data safe?",
