@@ -222,6 +222,31 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function SectionConnector() {
+  return (
+    <div className="relative z-10 flex justify-center" aria-hidden>
+      <div className="flex flex-col items-center">
+        <span className="h-14 w-px bg-gradient-to-b from-transparent via-white/15 to-white/25" />
+        <span className="my-1 h-2 w-2 rotate-45 rounded-[2px] border border-white/30 bg-white/[0.10] shadow-[0_0_12px_rgba(151,179,255,0.35)]" />
+        <span className="h-14 w-px bg-gradient-to-b from-white/25 via-white/15 to-transparent" />
+      </div>
+    </div>
+  );
+}
+
+function SectionEyebrow({ index, label }: { index: string; label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex h-7 min-w-7 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] px-2 text-xs font-bold tabular-nums text-[#d7dceb] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+        {index}
+      </span>
+      <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export function HandoffLanding() {
   const [lang, setLang] = useState<Lang>(getInitialLang);
   const auth = useAuth();
@@ -295,7 +320,7 @@ export function HandoffLanding() {
         </div>
       </header>
 
-      <section className="relative z-10 isolate overflow-hidden border-b border-white/10">
+      <section className="relative z-10 isolate overflow-hidden">
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#1A1F31] to-transparent" />
 
         <div className="relative mx-auto flex min-h-[calc(88vh-4.5rem)] max-w-7xl flex-col justify-center px-5 py-14">
@@ -344,10 +369,10 @@ export function HandoffLanding() {
         </div>
       </section>
 
-      <section id="demo" className="relative z-10 mx-auto max-w-7xl px-5 py-16">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
-          {text.demoEyebrow as string}
-        </p>
+      <SectionConnector />
+
+      <section id="demo" className="relative z-10 mx-auto max-w-7xl scroll-mt-24 px-5 pb-14 pt-6">
+        <SectionEyebrow index="01" label={text.demoEyebrow as string} />
         <div className="mt-3 grid gap-4 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
           <h2 className="text-3xl font-semibold md:text-4xl">{text.demoTitle as string}</h2>
           <p className="max-w-3xl text-sm leading-6 text-[#a8b2c4] md:text-base">
@@ -359,14 +384,14 @@ export function HandoffLanding() {
         </div>
       </section>
 
-      <section id="preview" className="relative z-10 mx-auto max-w-7xl px-5 py-16">
+      <SectionConnector />
+
+      <section id="preview" className="relative z-10 mx-auto max-w-7xl scroll-mt-24 px-5 pb-14 pt-6">
         <div
           className={`grid gap-6 rounded-xl p-6 lg:grid-cols-[0.82fr_1.18fr] lg:p-8 ${glassSurface}`}
         >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
-              {text.previewEyebrow as string}
-            </p>
+            <SectionEyebrow index="02" label={text.previewEyebrow as string} />
             <h2 className="mt-3 text-2xl font-semibold md:text-3xl">
               {text.previewTitle as string}
             </h2>
@@ -403,12 +428,12 @@ export function HandoffLanding() {
         </div>
       </section>
 
-      <section id="how" className="relative z-10 mx-auto max-w-7xl px-5 pb-28 pt-16">
+      <SectionConnector />
+
+      <section id="how" className="relative z-10 mx-auto max-w-7xl scroll-mt-24 px-5 pb-28 pt-6">
         <div className="grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:items-start">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
-              {text.howEyebrow as string}
-            </p>
+            <SectionEyebrow index="03" label={text.howEyebrow as string} />
             <h2 className="mt-3 text-2xl font-semibold md:text-3xl">{text.howTitle as string}</h2>
             <p className="mt-4 text-sm leading-6 text-[#a8b2c4] md:text-base">
               {text.howBody as string}
