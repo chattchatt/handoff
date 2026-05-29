@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Github, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { callN8n, type HandoffRequest, type HandoffResponse } from "@/lib/n8n";
 import { buildIssueContent, publishGithubIssue } from "@/lib/github";
 import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from "@/lib/use-auth";
+import { getSupabase } from "@/lib/supabase";
 
 type WorkbenchView =
   | "input"
@@ -212,6 +215,11 @@ const workbenchCopy = {
     historyReopen: "다시 보기",
     historyDelete: "삭제",
     historyClearAll: "전체 비우기",
+    historyLoginRequired: "로그인 필요",
+    historyLoginHint: "히스토리는 GitHub 로그인 후 계정별로 저장됩니다.",
+    historyLoginButton: "GitHub로 로그인",
+    loginAria: "GitHub로 로그인",
+    logoutAria: "로그아웃",
     noItems: "아직 반환된 항목이 없습니다.",
     goalEvidence: "입력 맥락에서 목표와 현재 상태를 추출했습니다.",
     goalAction: "목표와 제약을 확인한 뒤 후속 작업으로 넘기세요.",
@@ -382,6 +390,11 @@ const workbenchCopy = {
     historyReopen: "Reopen",
     historyDelete: "Delete",
     historyClearAll: "Clear all",
+    historyLoginRequired: "Login required",
+    historyLoginHint: "History is saved per account after you sign in with GitHub.",
+    historyLoginButton: "Sign in with GitHub",
+    loginAria: "Sign in with GitHub",
+    logoutAria: "Sign out",
     noItems: "No returned items yet.",
     goalEvidence: "The goal and current state were extracted from the input context.",
     goalAction: "Review the goal and constraints, then pass them into follow-up tasks.",
@@ -729,6 +742,46 @@ function readHistory(): HistoryItem[] {
   } catch {
     return [];
   }
+}
+
+const MIGRATED_KEY = "handoff.history.migrated.v1";
+
+// Shape persisted into the handoffs.request jsonb column so a row can be
+// rehydrated into a HistoryItem without re-running the pipeline.
+type StoredRequest = {
+  meetingTitle?: string;
+  recipient?: string;
+  transcript?: string;
+  deliveryType?: HandoffRequest["deliveryType"];
+};
+
+// Map a Supabase row (id, title, created_at, optional request/response) to a HistoryItem.
+function rowToHistoryItem(
+  row: {
+    id: string;
+    title: string | null;
+    created_at: string;
+    request?: unknown;
+    response?: unknown;
+  },
+  lang: Lang,
+): HistoryItem {
+  const request = (row.request ?? {}) as StoredRequest;
+  const response = (row.response ?? undefined) as HandoffResponse | undefined;
+  const transcript = request.transcript ?? "";
+  const deliveryType = request.deliveryType ?? "website_brief";
+  return {
+    id: row.id,
+    title: row.title ?? request.meetingTitle ?? "Handoff",
+    createdAt: row.created_at,
+    inputType: classifyInputType(transcript),
+    deliveryLabel: getDeliveryLabel(lang, deliveryType),
+    summary: response?.meetingUnderstanding.goal || response?.deliverablePack.brief || "",
+    response,
+    meetingTitle: request.meetingTitle,
+    recipient: request.recipient,
+    transcript,
+  };
 }
 
 function StatusBadge({
@@ -1302,6 +1355,48 @@ function classifyInputType(text: string): "Meeting" | "Memo" | "Issue" | "Reques
   return "Meeting";
 }
 
+export function AuthButton({
+  auth,
+  t,
+}: {
+  auth: ReturnType<typeof useAuth>;
+  t: { loginAria: string; logoutAria: string };
+}) {
+  // Hidden entirely when Supabase env is missing (auth degrades gracefully).
+  if (!auth.configured) return null;
+  if (auth.loggedIn && auth.user) {
+    return (
+      <button
+        type="button"
+        onClick={() => void auth.logout()}
+        aria-label={t.logoutAria}
+        title={`${auth.user.login || auth.user.name} · ${t.logoutAria}`}
+        className="group relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/[0.18] bg-white/[0.06] transition hover:border-[#EE684E]/[0.45] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+      >
+        {auth.user.avatarUrl ? (
+          <img src={auth.user.avatarUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <Github className="h-4 w-4 text-[#e8edf6]" />
+        )}
+        <span className="absolute inset-0 flex items-center justify-center bg-[#1A1F31]/70 opacity-0 transition group-hover:opacity-100">
+          <LogOut className="h-4 w-4 text-[#FFE5DE]" />
+        </span>
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => void auth.login()}
+      aria-label={t.loginAria}
+      title={t.loginAria}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.18] bg-white/[0.06] text-[#e8edf6] transition hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+    >
+      <Github className="h-4 w-4" />
+    </button>
+  );
+}
+
 export function HandoffDemo({
   showDebugPanel = true,
   lang = "ko",
@@ -1324,6 +1419,7 @@ export function HandoffDemo({
   const [error, setError] = useState<string | null>(null);
   const [rawResult, setRawResult] = useState<unknown>(null);
   const t = workbenchCopy[lang];
+  const auth = useAuth();
   const deliveryOptions = deliveryOptionsByLang[lang];
   const navItems = navItemsByLang[lang];
   const pipelineSteps = pipelineStepsByLang[lang];
@@ -1332,9 +1428,47 @@ export function HandoffDemo({
   const result = useMemo(() => (rawResult ? normalizeResponse(rawResult) : null), [rawResult]);
   const deliveryLabel = getDeliveryLabel(lang, deliveryType);
 
+  // History source depends on auth: Supabase (RLS-scoped to the user) when logged in,
+  // localStorage when anonymous. On first login, push localStorage rows into Supabase.
   useEffect(() => {
-    setHistoryItems(readHistory());
-  }, []);
+    if (!auth.ready) return;
+    const supabase = getSupabase();
+    if (!auth.loggedIn || !supabase) {
+      setHistoryItems(readHistory());
+      return;
+    }
+
+    let active = true;
+    void (async () => {
+      if (typeof window !== "undefined" && !window.localStorage.getItem(MIGRATED_KEY)) {
+        const local = readHistory();
+        if (local.length) {
+          const rows = local.map((item) => ({
+            title: item.title,
+            request: {
+              meetingTitle: item.meetingTitle,
+              recipient: item.recipient,
+              transcript: item.transcript,
+            } satisfies StoredRequest,
+            response: item.response,
+          }));
+          await supabase.from("handoffs").insert(rows);
+        }
+        window.localStorage.setItem(MIGRATED_KEY, "1");
+      }
+      const { data } = await supabase
+        .from("handoffs")
+        .select("id,title,created_at,request,response")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!active) return;
+      setHistoryItems((data ?? []).map((row) => rowToHistoryItem(row, lang)));
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [auth.ready, auth.loggedIn, lang]);
 
   const canSubmit =
     meetingTitle.trim().length > 0 && (transcript.trim().length > 0 || selectedFile !== null);
@@ -1385,23 +1519,44 @@ export function HandoffDemo({
         setActiveView("error");
         return;
       }
-      const nextHistory = [
-        {
-          id: `${Date.now()}`,
-          title: request.meetingTitle || normalized.deliverablePack.title,
-          createdAt: new Date().toISOString(),
-          inputType: classifyInputType(request.transcript),
-          deliveryLabel: getDeliveryLabel(lang, request.deliveryType),
-          summary: normalized.meetingUnderstanding.goal || normalized.deliverablePack.brief,
-          response: normalized,
+      const title = request.meetingTitle || normalized.deliverablePack.title;
+      const newItem: HistoryItem = {
+        id: `${Date.now()}`,
+        title,
+        createdAt: new Date().toISOString(),
+        inputType: classifyInputType(request.transcript),
+        deliveryLabel: getDeliveryLabel(lang, request.deliveryType),
+        summary: normalized.meetingUnderstanding.goal || normalized.deliverablePack.brief,
+        response: normalized,
+        meetingTitle: request.meetingTitle,
+        recipient: request.recipient,
+        transcript: request.transcript,
+      };
+
+      const supabase = getSupabase();
+      if (auth.loggedIn && supabase) {
+        // Persist to Supabase (RLS scopes the row to auth.uid()); use the row id.
+        const storedRequest: StoredRequest = {
           meetingTitle: request.meetingTitle,
           recipient: request.recipient,
           transcript: request.transcript,
-        },
-        ...historyItems,
-      ].slice(0, 12);
-      setHistoryItems(nextHistory);
-      saveHistory(nextHistory);
+          deliveryType: request.deliveryType,
+        };
+        const { data: inserted } = await supabase
+          .from("handoffs")
+          .insert({ title, request: storedRequest, response: normalized })
+          .select("id,created_at")
+          .single();
+        if (inserted) {
+          newItem.id = inserted.id as string;
+          newItem.createdAt = (inserted.created_at as string) ?? newItem.createdAt;
+        }
+        setHistoryItems([newItem, ...historyItems].slice(0, 50));
+      } else {
+        const nextHistory = [newItem, ...historyItems].slice(0, 12);
+        setHistoryItems(nextHistory);
+        saveHistory(nextHistory);
+      }
       setActiveView("dashboard");
     } catch (err) {
       // The multipart upload path failed. If a file is attached and we haven't already
@@ -1539,9 +1694,22 @@ export function HandoffDemo({
     setActiveView("input");
   }
 
-  function handleOpenHistory(item: HistoryItem) {
-    if (!item.response) return;
-    setRawResult(item.response);
+  async function handleOpenHistory(item: HistoryItem) {
+    let response = item.response;
+    if (!response) {
+      // Logged-in rows are listed without the heavy response; fetch it on demand.
+      const supabase = getSupabase();
+      if (auth.loggedIn && supabase) {
+        const { data } = await supabase
+          .from("handoffs")
+          .select("response")
+          .eq("id", item.id)
+          .single();
+        response = (data?.response ?? undefined) as HandoffResponse | undefined;
+      }
+    }
+    if (!response) return;
+    setRawResult(response);
     setMeetingTitle(item.meetingTitle || item.title || "");
     setRecipient(item.recipient || "");
     setTranscript(item.transcript || "");
@@ -1556,12 +1724,23 @@ export function HandoffDemo({
   function handleDeleteHistory(id: string) {
     const next = historyItems.filter((item) => item.id !== id);
     setHistoryItems(next);
-    saveHistory(next);
+    const supabase = getSupabase();
+    if (auth.loggedIn && supabase) {
+      void supabase.from("handoffs").delete().eq("id", id);
+    } else {
+      saveHistory(next);
+    }
   }
 
   function handleClearHistory() {
+    const ids = historyItems.map((item) => item.id);
     setHistoryItems([]);
-    saveHistory([]);
+    const supabase = getSupabase();
+    if (auth.loggedIn && supabase) {
+      if (ids.length) void supabase.from("handoffs").delete().in("id", ids);
+    } else {
+      saveHistory([]);
+    }
   }
 
   async function handleWebhookTest() {
@@ -1601,10 +1780,10 @@ export function HandoffDemo({
           </div>
           <nav className="grid gap-1">
             {navItems.map((item) => {
-              const disabled =
-                !result &&
-                item.id !== "input" &&
-                !(item.id === "history" && historyItems.length > 0);
+              const historyReachable =
+                item.id === "history" &&
+                (historyItems.length > 0 || (auth.configured && !auth.loggedIn));
+              const disabled = !result && item.id !== "input" && !historyReachable;
               const selected = activeView === item.id;
               return (
                 <button
@@ -1632,6 +1811,7 @@ export function HandoffDemo({
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[#a8b2c4]">{t.headerBody}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <AuthButton auth={auth} t={t} />
               <StatusBadge tone={result ? "good" : "neutral"}>
                 {result ? "Ready for Handoff" : t.waiting}
               </StatusBadge>
@@ -1724,15 +1904,29 @@ export function HandoffDemo({
     );
   }
 
+  const historyLocked = auth.configured && !auth.loggedIn;
   const historyView = (
     <WorkbenchCard
       eyebrow="Archive"
       title={t.historyTitle}
       summary={t.historySummary}
-      status={historyItems.length ? "Ready" : "Needs evidence"}
+      status={historyLocked ? "Needs evidence" : historyItems.length ? "Ready" : "Needs evidence"}
       labels={cardLabels}
     >
-      {historyItems.length ? (
+      {historyLocked ? (
+        <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-white/[0.16] bg-white/[0.035] p-5">
+          <StatusBadge tone="warn">{t.historyLoginRequired}</StatusBadge>
+          <p className="text-sm leading-6 text-[#a8b2c4]">{t.historyLoginHint}</p>
+          <button
+            type="button"
+            onClick={() => void auth.login()}
+            className="inline-flex items-center gap-2 rounded-md border border-white/[0.18] bg-white/[0.06] px-4 py-2 text-sm font-semibold text-[#e8edf6] transition hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+          >
+            <Github className="h-4 w-4" />
+            {t.historyLoginButton}
+          </button>
+        </div>
+      ) : historyItems.length ? (
         <div className="grid gap-3">
           {historyItems.length > 1 && (
             <div className="flex justify-end">
@@ -1767,8 +1961,8 @@ export function HandoffDemo({
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => handleOpenHistory(item)}
-                    disabled={!item.response}
+                    onClick={() => void handleOpenHistory(item)}
+                    disabled={!item.response && !auth.loggedIn}
                     className="rounded-md border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.14] px-3 py-1 text-xs font-semibold text-white transition hover:bg-[#5D7EEB]/[0.24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {t.historyReopen}
