@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import { Star, Plus, Minus, Check, X, Github, LogOut } from "lucide-react";
 import { copy, type Lang } from "@/components/landing/content";
 import handoffLogo from "@/assets/handoff-logo.png";
@@ -61,13 +62,13 @@ export function HandoffLanding() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-[var(--d-border)] bg-[#1a1f31]/80 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-          <button
+          <Link
+            to="/"
             className="flex items-center gap-2 text-lg font-bold tracking-tight text-[var(--d-fg)]"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             <img src={handoffLogo} alt="HandOff logo" className="h-8 w-8 object-contain" />
             Hand<span className="text-[var(--d-muted)]">Off</span>
-          </button>
+          </Link>
 
           <div className="hidden md:block" />
           <div className="flex items-center gap-2">
