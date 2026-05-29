@@ -91,15 +91,8 @@ export function SecondaryButton({
   );
 }
 
-const GRADIENTS = [
-  "linear-gradient(125deg,#2f6bff 0%,#6a3df0 38%,#ff7a4d 72%,#ffd166 100%)",
-  "linear-gradient(125deg,#ff7a4d 0%,#f0526a 40%,#7b3ff2 78%,#2f6bff 100%)",
-  "linear-gradient(125deg,#22c1c3 0%,#3a7bff 45%,#7b3ff2 80%,#ff7a4d 100%)",
-  "linear-gradient(125deg,#ffd166 0%,#ff7a4d 38%,#f0526a 70%,#7b3ff2 100%)",
-];
-
 /**
- * Tilted device frame on a colorful gradient backdrop.
+ * Tilted device frame, themed for the dark design system.
  * Drop a video later by passing `src` (mp4) + optional `poster`.
  */
 export function VideoFrame({
@@ -116,23 +109,19 @@ export function VideoFrame({
   label?: string;
 }) {
   const rotateY = tilt === "right" ? "-9deg" : tilt === "left" ? "9deg" : "0deg";
-  const gradient = GRADIENTS[variant % GRADIENTS.length];
 
   return (
-    <div
-      className="relative overflow-hidden rounded-3xl p-6 sm:p-10"
-      style={{ background: gradient }}
-    >
+    <div className="relative overflow-hidden rounded-3xl border border-[var(--d-border)] bg-[var(--d-surface)] p-6 sm:p-10">
       <div
-        className="overflow-hidden rounded-xl bg-white shadow-[0_30px_80px_rgba(20,16,12,0.35)] ring-1 ring-black/10"
+        className="overflow-hidden rounded-xl border border-[var(--d-border-strong)] bg-[var(--d-bg-2)] shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
         style={{ transform: `perspective(1700px) rotateY(${rotateY}) rotateX(3deg)` }}
       >
         {/* browser chrome */}
-        <div className="flex items-center gap-1.5 border-b border-black/[0.06] bg-[#f3f1ee] px-4 py-2.5">
+        <div className="flex items-center gap-1.5 border-b border-[var(--d-border)] bg-[var(--d-surface-2)] px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-          <span className="ml-3 hidden truncate rounded-md bg-white px-3 py-1 text-[10px] text-[#9a948c] sm:block">
+          <span className="ml-3 hidden truncate rounded-md bg-[var(--d-bg)] px-3 py-1 text-[10px] text-[var(--d-muted)] sm:block">
             daval.cloud
           </span>
         </div>
@@ -148,9 +137,9 @@ export function VideoFrame({
             playsInline
           />
         ) : (
-          <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,#fbfaf8,#f1ede6)] text-[#b3aca0]">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm">
-              <Play className="h-5 w-5 fill-[#8b8378] text-[#8b8378]" />
+          <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-3 bg-[var(--d-bg)] text-[var(--d-muted)]">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--d-surface)]">
+              <Play className="h-5 w-5 fill-current" />
             </span>
             <span className="text-xs font-semibold tracking-wide">
               {label ?? "영상이 들어갈 자리"}
