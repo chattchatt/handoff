@@ -188,6 +188,7 @@ export function HandoffLanding() {
                   <VideoFrame
                     tilt={flip ? "left" : "right"}
                     variant={i}
+                    src={row.video}
                     label={lang === "ko" ? "영상이 들어갈 자리" : "Video goes here"}
                   />
                 </Reveal>
