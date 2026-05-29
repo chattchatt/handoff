@@ -201,7 +201,7 @@ export function HandoffLanding() {
         <div className="mx-auto max-w-6xl px-5">
           <Reveal className="max-w-2xl">
             <Eyebrow>{t.services.eyebrow}</Eyebrow>
-            <h2 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+            <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               {t.services.title}
             </h2>
             <p className="mt-4 text-base text-[var(--d-muted)]">{t.services.body}</p>
@@ -209,13 +209,14 @@ export function HandoffLanding() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2">
             {t.services.items.map((s, i) => (
               <Reveal key={s.index} delay={i * 0.05}>
-                <div className="h-full rounded-3xl border border-[var(--d-border)] bg-[var(--d-bg)] p-7">
-                  <span className="text-sm font-extrabold text-[var(--d-faded)]">{s.index}</span>
-                  <h3 className="mt-3 text-xl font-extrabold tracking-tight">{s.name}</h3>
+                <div className="glass-panel h-full rounded-2xl p-7">
+                  <span className="text-sm font-bold text-[var(--d-faded)]">{s.index}</span>
+                  <h3 className="mt-3 text-xl font-semibold tracking-tight">{s.name}</h3>
                   <p className="mt-3 text-sm leading-6 text-[var(--d-muted)]">{s.body}</p>
                 </div>
               </Reveal>
             ))}
+
           </div>
         </div>
       </section>
