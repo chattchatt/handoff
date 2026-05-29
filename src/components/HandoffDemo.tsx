@@ -64,21 +64,13 @@ const deliveryOptionsByLang: Record<
 
 const navItemsByLang: Record<Lang, Array<{ id: WorkbenchView; label: string; eyebrow: string }>> = {
   ko: [
-    { id: "dashboard", label: "대시보드", eyebrow: "Overview" },
     { id: "input", label: "입력", eyebrow: "Context" },
-    { id: "meeting", label: "목표/맥락", eyebrow: "Goal State" },
-    { id: "delivery", label: "AI 프롬프트", eyebrow: "Prompt" },
-    { id: "memory", label: "실행 기억", eyebrow: "Memory" },
-    { id: "evidence", label: "근거 자료", eyebrow: "Evidence" },
+    { id: "dashboard", label: "대시보드", eyebrow: "Overview" },
     { id: "history", label: "히스토리", eyebrow: "Archive" },
   ],
   en: [
-    { id: "dashboard", label: "Dashboard", eyebrow: "Overview" },
     { id: "input", label: "Input", eyebrow: "Context" },
-    { id: "meeting", label: "Goal / Context", eyebrow: "Goal State" },
-    { id: "delivery", label: "AI Prompt", eyebrow: "Prompt" },
-    { id: "memory", label: "Execution Memory", eyebrow: "Memory" },
-    { id: "evidence", label: "Context / Evidence", eyebrow: "Evidence" },
+    { id: "dashboard", label: "Dashboard", eyebrow: "Overview" },
     { id: "history", label: "History", eyebrow: "Archive" },
   ],
 };
