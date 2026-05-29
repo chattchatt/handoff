@@ -285,7 +285,11 @@ export function HandoffLanding() {
             </div>
             <AuthButton
               auth={auth}
-              t={{ loginAria: text.loginAria as string, logoutAria: text.logoutAria as string }}
+              t={{
+                loginAria: text.loginAria as string,
+                logoutAria: text.logoutAria as string,
+                connectLabel: text.connectLabel as string,
+              }}
             />
           </div>
         </div>
