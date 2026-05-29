@@ -26,6 +26,11 @@ function deriveUser(user: User | null | undefined): AuthUser | null {
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
+  // GitHub API token from the OAuth session. Supabase only includes provider_token
+  // right after sign-in (it is dropped on a silent token refresh), so we keep the
+  // last non-null value and clear it on sign-out. Used to list repos and create
+  // issues directly from the browser — no separately pasted PAT.
+  const [providerToken, setProviderToken] = useState<string | null>(null);
   const [ready, setReady] = useState(!isSupabaseConfigured);
 
   useEffect(() => {
@@ -39,11 +44,14 @@ export function useAuth() {
     void supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
       setUser(deriveUser(data.session?.user));
+      if (data.session?.provider_token) setProviderToken(data.session.provider_token);
       setReady(true);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session: Session | null) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session: Session | null) => {
       setUser(deriveUser(session?.user));
+      if (session?.provider_token) setProviderToken(session.provider_token);
+      if (event === "SIGNED_OUT") setProviderToken(null);
       setReady(true);
     });
 
@@ -58,7 +66,9 @@ export function useAuth() {
     if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: "github",
-      options: { redirectTo: window.location.origin + "/app" },
+      // `repo` scope lets the session token create issues in the user's repos
+      // (public and private). The user consents to this on the GitHub screen.
+      options: { scopes: "repo", redirectTo: window.location.origin + "/app" },
     });
   }, []);
 
@@ -67,11 +77,13 @@ export function useAuth() {
     if (!supabase) return;
     await supabase.auth.signOut();
     setUser(null);
+    setProviderToken(null);
   }, []);
 
   return {
     loggedIn: Boolean(user),
     user,
+    providerToken,
     ready,
     configured: isSupabaseConfigured,
     login,
