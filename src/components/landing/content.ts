@@ -280,6 +280,7 @@ export const copy: Record<Lang, Content> = {
     nav: { process: "How it works", services: "Features", pricing: "Pricing", faq: "FAQ" },
     cta: {
       start: "Open Workbench",
+      github: "Continue with GitHub",
       explore: "See how it works",
       pricing: "View Pricing",
       viewAllPlans: "View all plans",
