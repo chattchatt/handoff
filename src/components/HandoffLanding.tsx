@@ -1,6 +1,5 @@
 import { useState } from "react";
 import HandoffDemo, { AuthButton } from "@/components/HandoffDemo";
-import HeroMemoryScene from "@/components/HeroMemoryScene";
 import { useAuth } from "@/lib/use-auth";
 
 type Lang = "ko" | "en";
@@ -23,6 +22,7 @@ const copy = {
       "회의록·메모·이슈·업무 요청을 붙여넣으면, 다음 담당자나 AI가 곧바로 일을 이어받을 수 있도록 핵심 요약·결정·해야 할 일·근거로 정리해 드립니다.",
     openGithub: "GitHub 열기",
     loginAria: "GitHub로 로그인",
+    connectLabel: "GitHub 연결",
     logoutAria: "로그아웃",
     demoCta: "지금 정리해 보기",
     previewCta: "결과 예시 보기",
@@ -55,6 +55,7 @@ const copy = {
       "Paste meeting notes, memos, issues, or requests and Handoff organizes them into a summary, decisions, next steps, and evidence — so the next teammate or AI can continue the work right away.",
     openGithub: "Open GitHub",
     loginAria: "Sign in with GitHub",
+    connectLabel: "Connect GitHub",
     logoutAria: "Sign out",
     demoCta: "Organize it now",
     previewCta: "See an example",
@@ -216,9 +217,6 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
         >
           Handoff
         </span>
-        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9aa3b5]">
-          E-Hong
-        </span>
       </span>
     </span>
   );
@@ -246,7 +244,7 @@ export function HandoffLanding() {
           'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
-      <HeroMemoryScene />
+      
       <div className="pointer-events-none fixed inset-0 z-[2] bg-[radial-gradient(circle_at_24%_22%,rgba(255,255,255,0.10),transparent_24%),radial-gradient(circle_at_72%_20%,rgba(151,179,255,0.10),transparent_28%),linear-gradient(180deg,rgba(3,4,7,0.03),rgba(3,4,7,0.38)_62%,rgba(3,4,7,0.84))]" />
 
       <header className="sticky top-0 z-40 border-b border-white/[0.12] bg-[#1A1F31]/[0.58] shadow-[inset_0_-1px_0_rgba(255,255,255,0.04)] backdrop-blur-2xl">
@@ -287,7 +285,11 @@ export function HandoffLanding() {
             </div>
             <AuthButton
               auth={auth}
-              t={{ loginAria: text.loginAria as string, logoutAria: text.logoutAria as string }}
+              t={{
+                loginAria: text.loginAria as string,
+                logoutAria: text.logoutAria as string,
+                connectLabel: text.connectLabel as string,
+              }}
             />
           </div>
         </div>
