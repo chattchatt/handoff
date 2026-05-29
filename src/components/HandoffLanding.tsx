@@ -369,10 +369,10 @@ export function HandoffLanding() {
         </div>
       </section>
 
-      <section id="demo" className="relative z-10 mx-auto max-w-7xl px-5 py-16">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
-          {text.demoEyebrow as string}
-        </p>
+      <SectionConnector />
+
+      <section id="demo" className="relative z-10 mx-auto max-w-7xl scroll-mt-24 px-5 pb-14 pt-6">
+        <SectionEyebrow index="01" label={text.demoEyebrow as string} />
         <div className="mt-3 grid gap-4 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
           <h2 className="text-3xl font-semibold md:text-4xl">{text.demoTitle as string}</h2>
           <p className="max-w-3xl text-sm leading-6 text-[#a8b2c4] md:text-base">
