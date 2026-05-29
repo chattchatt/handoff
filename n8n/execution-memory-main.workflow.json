@@ -1,0 +1,539 @@
+{
+  "name": "Execution Memory Main",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upflow",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "4fe33473-ff6e-4f9b-9fd2-7c32cc36249b",
+      "name": "UpFlow Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "1c7f5fd8-65e2-4ae3-991f-6679c683f162"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const body = $json.body || $json;\nconst binary = $binary || {};\nconst hasFile = !!(binary && binary.sourceFile);\nconst fileMeta = hasFile ? binary.sourceFile : null;\nconst mime = fileMeta ? (fileMeta.mimeType || 'application/octet-stream') : '';\nlet fileDataUrl = '';\nif (hasFile) {\n  const buf = await this.helpers.getBinaryDataBuffer(0, 'sourceFile');\n  fileDataUrl = `data:${mime};base64,${buf.toString('base64')}`;\n}\nreturn {\n  json: {\n    meetingTitle: body.meetingTitle || body.meeting_title || body.title || '',\n    transcript: body.transcript || body.meeting_memo || body.memo || body.message || '',\n    deliveryType: body.deliveryType || body.delivery_type || 'website_brief',\n    recipient: body.recipient || body.customer || '',\n    tone: body.tone || 'professional',\n    hasFile: hasFile,\n    sourceType: mime || (fileMeta ? fileMeta.fileExtension : '') || '',\n    fileDataUrl: fileDataUrl,\n    requested_at: new Date().toISOString()\n  },\n  binary: $binary\n};\n"
+      },
+      "id": "4d1d641e-acd7-4800-8fc1-73eba0086ce0",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "has-file-cond-1",
+              "leftValue": "={{ $json.hasFile }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4f00-8000-000000000001",
+      "name": "Has File?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.upstage.ai/v1/document-digitization",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "contentType": "multipart-form-data",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "document",
+              "inputDataFieldName": "sourceFile"
+            },
+            {
+              "name": "model",
+              "value": "document-parse"
+            },
+            {
+              "name": "output_formats",
+              "value": "[\"text\",\"markdown\"]"
+            },
+            {
+              "name": "coordinates",
+              "value": "false"
+            },
+            {
+              "name": "ocr",
+              "value": "auto"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "a1b2c3d4-0002-4f00-8000-000000000002",
+      "name": "Document Parse",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        -160
+      ],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "SBGIH0QnHOzpsMI9",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.upstage.ai/v1/information-extraction",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'information-extract',\n  messages: [\n    { role: 'user', content: [ { type: 'image_url', image_url: { url: $('Normalize Input').item.json.fileDataUrl } } ] }\n  ],\n  response_format: {\n    type: 'json_schema',\n    json_schema: {\n      name: 'handoff_schema',\n      schema: {\n        type: 'object',\n        properties: {\n          goal: { type: 'string' },\n          decisions: { type: 'array', items: { type: 'string' } },\n          action_items: { type: 'array', items: { type: 'string' } },\n          participants: { type: 'array', items: { type: 'string' } },\n          deadlines: { type: 'array', items: { type: 'string' } },\n          risks: { type: 'array', items: { type: 'string' } }\n        },\n        required: ['goal','action_items']\n      }\n    }\n  }\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "a1b2c3d4-0003-4f00-8000-000000000003",
+      "name": "Information Extraction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        -160
+      ],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "SBGIH0QnHOzpsMI9",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Inputs available: this node receives Information Extraction output.\n// Pull parsed doc text + extracted fields from the upstream Upstage nodes by name.\nlet docNode = {};\nlet ieNode = {};\nlet normNode = {};\ntry { docNode = $('Document Parse').item.json || {}; } catch (e) {}\ntry { ieNode = $('Information Extraction').item.json || {}; } catch (e) {}\ntry { normNode = $('Normalize Input').item.json || {}; } catch (e) {}\n\nconst docContent = docNode.content || {};\nconst parsedText = typeof docContent.text === 'string' ? docContent.text : '';\nconst pageCount = (docNode.usage && typeof docNode.usage.pages === 'number') ? docNode.usage.pages : 0;\n\n// Information Extraction returns choices[0].message.content as a JSON STRING.\nlet extracted = {};\ntry {\n  const raw = ieNode.choices && ieNode.choices[0] && ieNode.choices[0].message ? ieNode.choices[0].message.content : '{}';\n  extracted = typeof raw === 'string' ? JSON.parse(raw) : (raw || {});\n} catch (e) { extracted = {}; }\n\nconst schemaKeys = ['goal','decisions','action_items','participants','deadlines','risks'];\nfunction populated(v) {\n  if (v === null || v === undefined) return false;\n  if (typeof v === 'string') return v.trim() !== '';\n  if (Array.isArray(v)) return v.length > 0;\n  return true;\n}\nconst fieldsPopulated = schemaKeys.filter((k) => populated(extracted[k])).length;\n\n// Build an enriched transcript context for Solar: original transcript + parsed doc + extracted fields.\nconst extractedSummary = JSON.stringify(extracted);\nconst MAX_DOC_CHARS = 8000; // cap text fed to Solar to keep latency sane; full length still reported below\nconst parsedForSolar = parsedText.length > MAX_DOC_CHARS ? (parsedText.slice(0, MAX_DOC_CHARS) + '\\n...[truncated for prompt; full document parsed]') : parsedText;\nconst baseTranscript = normNode.transcript || '';\nconst enrichedTranscript = [\n  baseTranscript ? ('Pasted notes:\\n' + baseTranscript) : '',\n  parsedForSolar ? ('Parsed source document:\\n' + parsedForSolar) : '',\n  extractedSummary && extractedSummary !== '{}' ? ('Structured fields extracted from document:\\n' + extractedSummary) : ''\n].filter(Boolean).join('\\n\\n');\n\nreturn {\n  json: {\n    meetingTitle: normNode.meetingTitle || '',\n    transcript: enrichedTranscript,\n    deliveryType: normNode.deliveryType || 'website_brief',\n    recipient: normNode.recipient || '',\n    tone: normNode.tone || 'professional',\n    requested_at: normNode.requested_at || new Date().toISOString(),\n    // pipeline attribution carried forward to Assemble Response\n    _pipeline: {\n      documentParse: {\n        pageCount: pageCount,\n        charsExtracted: parsedText.length,\n        sourceType: normNode.sourceType || ''\n      },\n      informationExtract: {\n        schemaFields: schemaKeys.length,\n        fieldsPopulated: fieldsPopulated\n      }\n    }\n  }\n};"
+      },
+      "id": "a1b2c3d4-0004-4f00-8000-000000000004",
+      "name": "Merge Doc Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// No file uploaded: feed the existing transcript text straight to Solar.\nconst j = $json;\nreturn {\n  json: {\n    meetingTitle: j.meetingTitle || '',\n    transcript: j.transcript || '',\n    deliveryType: j.deliveryType || 'website_brief',\n    recipient: j.recipient || '',\n    tone: j.tone || 'professional',\n    requested_at: j.requested_at || new Date().toISOString(),\n    _pipeline: {}\n  }\n};"
+      },
+      "id": "a1b2c3d4-0005-4f00-8000-000000000005",
+      "name": "Text Only Path",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.upstage.ai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "model": "solar-pro2",
+          "response_format": {
+            "type": "json_object"
+          },
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are Execution Memory, an AI runtime layer that turns transcripts into persistent execution state. Return one compact valid JSON object only. Do not use markdown, comments, prose, trailing commas, or code fences. The JSON object must have exactly these top-level keys: meetingUnderstanding, deliverablePack, executionMemory, harness. meetingUnderstanding must include goal:string, customerContext:string, keyDecisions:string[], requirements:string[], missingInfo:string[], risks:string[]. deliverablePack must include type:string, title:string, customerMessage:string, brief:string, tasks:string[], and may include lovablePrompt:string or prd:string. executionMemory must include previousContextUsed:boolean, nextActions:string[], memoryToPersist:string[], continuationPrompt:string. harness must include doneEvidence:string[], missingEvidence:string[], qualityChecklist:string[], nextVerificationStep:string. Keep string values concise so the full response remains valid JSON."
+            },
+            {
+              "role": "user",
+              "content": "=Return JSON for this meeting. Meeting title: {{ $json.meetingTitle }}\nRecipient: {{ $json.recipient }}\nDelivery type: {{ $json.deliveryType }}\nTone: {{ $json.tone }}\nTranscript:\n{{ $json.transcript }}"
+            }
+          ],
+          "temperature": 0,
+          "max_tokens": 1400
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 90000
+        }
+      },
+      "id": "50df758a-7ca3-4773-95c7-4267838b7a14",
+      "name": "Upstage Solar Structured Output",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "SBGIH0QnHOzpsMI9",
+          "name": "Bearer Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ---- Assemble Response (extended Parse Upstage Response) ----\n// Pull pipeline attribution carried from the pre-Solar branch.\nlet _pipelineCtx = {};\ntry { _pipelineCtx = ($('Merge Doc Context').item.json && $('Merge Doc Context').item.json._pipeline) || {}; } catch (e) {}\nif (!_pipelineCtx || Object.keys(_pipelineCtx).length === 0) {\n  try { _pipelineCtx = ($('Text Only Path').item.json && $('Text Only Path').item.json._pipeline) || {}; } catch (e) {}\n}\nconst content =\n  $json.choices?.[0]?.message?.content ??\n  $json.message?.content ??\n  $json.content ??\n  '{}';\n\nconst requiredSections = ['meetingUnderstanding', 'deliverablePack', 'executionMemory', 'harness'];\n\nfunction stripJsonFence(value) {\n  return String(value)\n    .trim()\n    .replace(/^\\uFEFF/, '')\n    .replace(/^```(?:json)?s*/i, '')\n    .replace(/s*```$/i, '')\n    .trim();\n}\n\nfunction extractBalancedJsonObject(value) {\n  const text = stripJsonFence(value);\n  const first = text.indexOf('{');\n  if (first === -1) return text;\n\n  let depth = 0;\n  let inString = false;\n  let escaped = false;\n\n  for (let i = first; i < text.length; i++) {\n    const char = text[i];\n\n    if (escaped) {\n      escaped = false;\n      continue;\n    }\n\n    if (char === '\\\\') {\n      escaped = true;\n      continue;\n    }\n\n    if (char === '\"') {\n      inString = !inString;\n      continue;\n    }\n\n    if (inString) continue;\n\n    if (char === '{') depth += 1;\n    if (char === '}') depth -= 1;\n\n    if (depth === 0) return text.slice(first, i + 1);\n  }\n\n  return text.slice(first);\n}\n\nfunction coerceString(value, fallback = '') {\n  if (typeof value === 'string') return value.trim();\n  if (value === null || value === undefined) return fallback;\n  return String(value);\n}\n\nfunction coerceArray(value) {\n  if (Array.isArray(value)) return value.map((entry) => coerceString(entry)).filter(Boolean);\n  if (typeof value === 'string' && value.trim()) return [value.trim()];\n  return [];\n}\n\nfunction coerceBoolean(value) {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'string') return ['true', 'yes', '1'].includes(value.toLowerCase());\n  return Boolean(value);\n}\n\nfunction normalizeContract(raw) {\n  const meetingUnderstanding = raw.meetingUnderstanding ?? {};\n  const deliverablePack = raw.deliverablePack ?? {};\n  const executionMemory = raw.executionMemory ?? {};\n  const harness = raw.harness ?? {};\n  const missingSections = requiredSections.filter(\n    (section) => !raw[section] || typeof raw[section] !== 'object' || Array.isArray(raw[section]),\n  );\n\n  return {\n    success: missingSections.length === 0,\n    meetingUnderstanding: {\n      goal: coerceString(meetingUnderstanding.goal),\n      customerContext: coerceString(meetingUnderstanding.customerContext),\n      keyDecisions: coerceArray(meetingUnderstanding.keyDecisions),\n      requirements: coerceArray(meetingUnderstanding.requirements),\n      missingInfo: coerceArray(meetingUnderstanding.missingInfo),\n      risks: coerceArray(meetingUnderstanding.risks),\n    },\n    deliverablePack: {\n      type: coerceString(deliverablePack.type, 'website_brief'),\n      title: coerceString(deliverablePack.title),\n      customerMessage: coerceString(deliverablePack.customerMessage),\n      brief: coerceString(deliverablePack.brief),\n      lovablePrompt: coerceString(deliverablePack.lovablePrompt),\n      prd: coerceString(deliverablePack.prd),\n      tasks: coerceArray(deliverablePack.tasks),\n    },\n    executionMemory: {\n      previousContextUsed: coerceBoolean(executionMemory.previousContextUsed),\n      nextActions: coerceArray(executionMemory.nextActions),\n      memoryToPersist: coerceArray(executionMemory.memoryToPersist),\n      continuationPrompt: coerceString(executionMemory.continuationPrompt),\n    },\n    harness: {\n      doneEvidence: coerceArray(harness.doneEvidence),\n      missingEvidence: coerceArray(harness.missingEvidence),\n      qualityChecklist: coerceArray(harness.qualityChecklist),\n      nextVerificationStep: coerceString(harness.nextVerificationStep),\n    },\n    _warnings: missingSections.map((section) => 'Missing required section: ' + section),\n    _error: missingSections.length ? 'UPSTAGE_RESPONSE_CONTRACT_INCOMPLETE' : null,\n    generated_at: new Date().toISOString(),\n  };\n}\n\nfunction failureResponse(reason, detail) {\n  return {\n    success: false,\n    meetingUnderstanding: {\n      goal: '',\n      customerContext: '',\n      keyDecisions: [],\n      requirements: [],\n      missingInfo: ['Upstage response could not be parsed into the expected Execution Memory contract.'],\n      risks: [reason],\n    },\n    deliverablePack: {\n      type: 'error_report',\n      title: 'Execution Memory generation needs review',\n      customerMessage: '',\n      brief: detail,\n      tasks: [],\n    },\n    executionMemory: {\n      previousContextUsed: false,\n      nextActions: [\n        'Review the raw Upstage response in n8n execution logs.',\n        'Rerun the workflow after fixing the response contract.',\n      ],\n      memoryToPersist: [],\n      continuationPrompt: 'Repair the Upstage response so it returns valid JSON with the required Execution Memory sections.',\n    },\n    harness: {\n      doneEvidence: [],\n      missingEvidence: ['Valid JSON response from Upstage', 'Four required Execution Memory sections'],\n      qualityChecklist: ['No silent fallback for production E2E', 'n8n execution log reviewed'],\n      nextVerificationStep: 'Open the n8n execution, inspect the Upstage node output, then rerun the Lovable debug test.',\n    },\n    _warnings: [reason],\n    _error: detail,\n    _raw: { content: String(content).slice(0, 4000) },\n    generated_at: new Date().toISOString(),\n  };\n}\n\nfunction attachPipeline(result) {\n  const pipeline = {};\n  if (_pipelineCtx && _pipelineCtx.documentParse) pipeline.documentParse = _pipelineCtx.documentParse;\n  if (_pipelineCtx && _pipelineCtx.informationExtract) pipeline.informationExtract = _pipelineCtx.informationExtract;\n  const dp = (result && result.deliverablePack) || {};\n  let deliverablesGenerated = 0;\n  ['tasks'].forEach((k) => { if (Array.isArray(dp[k])) deliverablesGenerated += dp[k].length; });\n  ['title','customerMessage','brief','lovablePrompt','prd'].forEach((k) => { if (typeof dp[k] === 'string' && dp[k].trim()) deliverablesGenerated += 1; });\n  pipeline.solar = { model: 'solar-pro3', deliverablesGenerated: deliverablesGenerated };\n  result.pipeline = pipeline;\n  if (result._error === undefined) result._error = null;\n  else if (typeof result._error === 'string' && result._error) {\n    result._error = { code: result._error, message: result._error, stage: 'solar' };\n  }\n  return result;\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(extractBalancedJsonObject(content));\n} catch (error) {\n  return { json: attachPipeline(failureResponse('UPSTAGE_JSON_PARSE_FAILED', error.message)) };\n}\n\nreturn { json: attachPipeline(normalizeContract(parsed)) };"
+      },
+      "id": "0ee04d67-bdb2-4de9-9725-46e689ebf1dc",
+      "name": "Assemble Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Receives error output from one of the three Upstage HTTP nodes.\n// Determines which stage failed and returns a minimal valid HandoffResponse shape\n// with _error.stage set so the frontend error view can name the stage.\nconst STAGE = $json.__stage || 'solar';\nconst errObj = $json.error || $json;\nconst code = (errObj && (errObj.code || errObj.name)) || 'UPSTAGE_NODE_ERROR';\nconst message = (errObj && (errObj.message || errObj.description)) || ('Upstage ' + STAGE + ' request failed');\n\nreturn {\n  json: {\n    success: false,\n    meetingUnderstanding: {\n      goal: '', customerContext: '', keyDecisions: [], requirements: [],\n      missingInfo: ['Upstage ' + STAGE + ' stage failed before generation completed.'],\n      risks: [String(code)]\n    },\n    deliverablePack: {\n      type: 'error_report',\n      title: 'Handoff pipeline failed at ' + STAGE,\n      customerMessage: '', brief: String(message), tasks: [],\n      lovablePrompt: '', prd: ''\n    },\n    executionMemory: {\n      previousContextUsed: false,\n      nextActions: ['Inspect the ' + STAGE + ' node output in n8n execution logs.', 'Retry after resolving the Upstage error.'],\n      memoryToPersist: [],\n      continuationPrompt: 'Resolve the Upstage ' + STAGE + ' failure and rerun the Handoff pipeline.'\n    },\n    harness: {\n      doneEvidence: [],\n      missingEvidence: ['Successful ' + STAGE + ' response'],\n      qualityChecklist: ['Upstage credential valid', 'Input payload well-formed'],\n      nextVerificationStep: 'Open the n8n execution and inspect the ' + STAGE + ' node error.'\n    },\n    pipeline: { solar: { model: 'solar-pro3', deliverablesGenerated: 0 } },\n    _error: { code: String(code), message: String(message), stage: STAGE },\n    generated_at: new Date().toISOString()\n  }\n};"
+      },
+      "id": "a1b2c3d4-0006-4f00-8000-000000000006",
+      "name": "Build Error Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const j = $json || {};\nj.__stage = 'documentParse';\nreturn { json: j };"
+      },
+      "id": "a1b2c3d4-0007-4f00-8000-000000000007",
+      "name": "Stage: documentParse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const j = $json || {};\nj.__stage = 'informationExtract';\nreturn { json: j };"
+      },
+      "id": "a1b2c3d4-0008-4f00-8000-000000000008",
+      "name": "Stage: informationExtract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const j = $json || {};\nj.__stage = 'solar';\nreturn { json: j };"
+      },
+      "id": "a1b2c3d4-0009-4f00-8000-000000000009",
+      "name": "Stage: solar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "373bd5dc-dbbc-415c-958c-0f214e1707db",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1792,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "UpFlow Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Has File?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has File?": {
+      "main": [
+        [
+          {
+            "node": "Document Parse",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Only Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Parse": {
+      "main": [
+        [
+          {
+            "node": "Information Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stage: documentParse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extraction": {
+      "main": [
+        [
+          {
+            "node": "Merge Doc Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stage: informationExtract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Doc Context": {
+      "main": [
+        [
+          {
+            "node": "Upstage Solar Structured Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Only Path": {
+      "main": [
+        [
+          {
+            "node": "Upstage Solar Structured Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upstage Solar Structured Output": {
+      "main": [
+        [
+          {
+            "node": "Assemble Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stage: solar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assemble Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stage: documentParse": {
+      "main": [
+        [
+          {
+            "node": "Build Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stage: informationExtract": {
+      "main": [
+        [
+          {
+            "node": "Build Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stage: solar": {
+      "main": [
+        [
+          {
+            "node": "Build Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "deda7391-9745-4b54-be46-3ae81e49b24f",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "daedb885de77e1b086dcdd51ae210f48a19ee46ae1d281cf2a4108865bfa456c"
+  },
+  "id": "13uoWHQZUoZKnPGT",
+  "tags": []
+}
