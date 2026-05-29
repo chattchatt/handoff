@@ -222,6 +222,31 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function SectionConnector() {
+  return (
+    <div className="relative z-10 flex justify-center" aria-hidden>
+      <div className="flex flex-col items-center">
+        <span className="h-14 w-px bg-gradient-to-b from-transparent via-white/15 to-white/25" />
+        <span className="my-1 h-2 w-2 rotate-45 rounded-[2px] border border-white/30 bg-white/[0.10] shadow-[0_0_12px_rgba(151,179,255,0.35)]" />
+        <span className="h-14 w-px bg-gradient-to-b from-white/25 via-white/15 to-transparent" />
+      </div>
+    </div>
+  );
+}
+
+function SectionEyebrow({ index, label }: { index: string; label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex h-7 min-w-7 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] px-2 text-xs font-bold tabular-nums text-[#d7dceb] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+        {index}
+      </span>
+      <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export function HandoffLanding() {
   const [lang, setLang] = useState<Lang>(getInitialLang);
   const auth = useAuth();
