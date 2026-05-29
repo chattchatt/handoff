@@ -206,7 +206,7 @@ export function HandoffLanding() {
       </section>
 
       {/* Services */}
-      <section id="services" className="scroll-mt-24 bg-[var(--d-bg-2)] py-20">
+      <section id="services" className="scroll-mt-24 py-20">
         <div className="mx-auto max-w-6xl px-5">
           <Reveal className="max-w-2xl">
             <Eyebrow>{t.services.eyebrow}</Eyebrow>
@@ -280,7 +280,7 @@ export function HandoffLanding() {
       </section>
 
       {/* Comparison */}
-      <section className="bg-[var(--d-bg-2)] py-20">
+      <section className="py-20">
         <div className="mx-auto max-w-6xl px-5">
           <Reveal className="max-w-2xl">
             <Eyebrow>{t.comparison.eyebrow}</Eyebrow>
@@ -367,7 +367,7 @@ export function HandoffLanding() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="bg-[var(--d-bg-2)] scroll-mt-24 py-20">
+      <section id="pricing" className="scroll-mt-24 py-20">
         <div className="mx-auto max-w-6xl px-5">
           <Reveal className="text-center">
             <div className="flex justify-center">
