@@ -122,7 +122,7 @@ export function VideoFrame({
           <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
           <span className="ml-3 hidden truncate rounded-md bg-[var(--d-bg)] px-3 py-1 text-[10px] text-[var(--d-muted)] sm:block">
-            daval.cloud
+            HandOff
           </span>
         </div>
 

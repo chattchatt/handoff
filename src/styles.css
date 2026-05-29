@@ -126,7 +126,7 @@
 
 @layer components {
   /* ---- landing layout, mapped onto the existing dark design system ---- */
-  .daval-landing {
+  .handoff-landing {
     --d-bg: var(--background);
     --d-bg-2: var(--surface);
     --d-surface: var(--surface-2);
@@ -145,7 +145,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  .daval-landing ::selection {
+  .handoff-landing ::selection {
     background: color-mix(in oklab, var(--primary) 40%, transparent);
   }
 

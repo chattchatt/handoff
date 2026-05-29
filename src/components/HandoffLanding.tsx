@@ -30,7 +30,7 @@ export function HandoffLanding() {
   }
 
   return (
-    <div className="daval-landing min-h-screen overflow-x-hidden">
+    <div className="handoff-landing min-h-screen overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-[var(--d-border)] bg-[var(--d-bg)]/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
@@ -38,7 +38,7 @@ export function HandoffLanding() {
             className="text-lg font-extrabold tracking-tight text-[var(--d-fg)]"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
-            daval<span className="text-[var(--d-muted)]">.cloud</span>
+            Hand<span className="text-[var(--d-muted)]">Off</span>
           </button>
           <nav className="hidden items-center gap-8 text-sm font-semibold text-[var(--d-muted)] md:flex">
             <button className="hover:text-[var(--d-fg)]" onClick={() => scrollToId("process")}>
@@ -402,7 +402,7 @@ export function HandoffLanding() {
         <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-lg font-extrabold tracking-tight">
-              daval<span className="text-[var(--d-muted)]">.cloud</span>
+              Hand<span className="text-[var(--d-muted)]">Off</span>
             </p>
             <p className="mt-3 max-w-xs text-sm leading-6 text-[var(--d-muted)]">{t.footer.tagline}</p>
           </div>
