@@ -462,11 +462,11 @@ export const copy: Record<Lang, Content> = {
     },
     finalCta: {
       eyebrow: "START NOW",
-      title: "Hand off without losing context.",
-      body: "Open the workbench and create your first execution memory. No install, no credit card.",
+      title: "Stop re-organizing. Just hand it off.",
+      body: "The moment you hand it off, people and AI agents pick it up. No install, no credit card.",
     },
     footer: {
-      tagline: "HandOff turns scattered work context into execution memory.",
+      tagline: "Meeting notes, PDFs, scattered memos — into work people and AI do together. Just hand it off.",
       rights: "© 2026 HandOff. All rights reserved.",
       cols: [
         { title: "Product", links: ["How it works", "Features", "Pricing", "FAQ"] },
