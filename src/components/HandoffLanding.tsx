@@ -320,7 +320,8 @@ export function HandoffLanding() {
         </div>
       </header>
 
-      <section className="relative z-10 isolate overflow-hidden border-b border-white/10">
+      <section className="relative z-10 isolate overflow-hidden">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[-1] h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#1A1F31] to-transparent" />
 
         <div className="relative mx-auto flex min-h-[calc(88vh-4.5rem)] max-w-7xl flex-col justify-center px-5 py-14">
