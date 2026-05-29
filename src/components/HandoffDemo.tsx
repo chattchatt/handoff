@@ -133,8 +133,8 @@ const workbenchCopy = {
     workContext: "업무 맥락",
     fileUpload: "문서 업로드",
     fileHint:
-      ".txt, .pdf 파일을 우선 지원합니다. PDF·DOCX·XLSX는 브라우저에서 본문을 추출해 업무 맥락에 추가하고, .md도 동일하게 자동 추가됩니다. HWP는 파일명만 기록됩니다.",
-    fileLoaded: "파일 내용을 업무 맥락에 추가했습니다.",
+      ".txt, .pdf 파일을 우선 지원합니다. 업로드한 파일은 분석 시 n8n으로 전송돼 Upstage Document Parse부터 처리됩니다. n8n 전송이 실패하면 브라우저에서 본문을 추출하는 fallback으로 동작합니다. HWP는 파일명만 기록됩니다.",
+    fileLoaded: "파일을 첨부했습니다. 분석 시 n8n으로 전송됩니다.",
     pdfExtracted: "PDF에서 본문 {count}자를 업무 맥락에 추가했습니다.",
     pdfExtractFailed:
       "PDF 본문 추출에 실패했습니다. 파일명만 맥락에 추가했습니다. 텍스트 기반이 아닌 스캔 PDF일 수 있습니다.",
@@ -145,6 +145,13 @@ const workbenchCopy = {
     xlsxExtractFailed: "Excel 파일 처리에 실패했습니다. .xlsx 또는 .xls 형식만 지원합니다.",
     hwpUnsupported:
       "HWP/HWPX 본문 추출은 현재 미지원입니다. 파일명만 맥락에 추가했습니다. .docx 또는 .pdf로 변환해 다시 업로드해주세요.",
+    fallbackExtraction:
+      "업로드 경로 실패로 브라우저에서 본문을 추출해 맥락에 추가했습니다 (fallback 추출). Upstage Document Parse 대신 사용된 임시 경로입니다.",
+    stageDocumentParse: "Document Parse 단계에서 실패",
+    stageInformationExtract: "Information Extract 단계에서 실패",
+    stageSolar: "Solar 단계에서 실패",
+    stageGeneric: "{stage} 단계에서 실패",
+    pipelineStageMissing: "미반환",
     unsupportedFile: "지원 형식은 TXT, MD, PDF, DOCX, XLSX입니다 (HWP는 파일명만 기록).",
     selectedFile: "선택 파일",
     contextPlaceholder:
@@ -297,8 +304,8 @@ const workbenchCopy = {
     workContext: "Work context",
     fileUpload: "Document upload",
     fileHint:
-      ".txt and .pdf are the priority formats. PDF/DOCX/XLSX text is extracted in the browser and appended to the work context; .md is appended the same way. HWP records filename only.",
-    fileLoaded: "File content was added to the work context.",
+      ".txt and .pdf are the priority formats. The uploaded file is sent to n8n on analysis and processed starting with Upstage Document Parse. If the n8n upload fails, it falls back to browser-side text extraction. HWP records filename only.",
+    fileLoaded: "File attached. It will be sent to n8n on analysis.",
     pdfExtracted: "Extracted {count} characters from PDF into the work context.",
     pdfExtractFailed:
       "Could not extract PDF text. Only the filename was added — the file may be a scanned (non-text) PDF.",
@@ -309,6 +316,13 @@ const workbenchCopy = {
     xlsxExtractFailed: "Could not process the Excel file. Only .xlsx or .xls is supported.",
     hwpUnsupported:
       "HWP/HWPX text extraction is not supported yet. Only the filename was added — please convert to .docx or .pdf and re-upload.",
+    fallbackExtraction:
+      "The upload path failed, so text was extracted in the browser and added to the context (fallback extraction). This is a stopgap used instead of Upstage Document Parse.",
+    stageDocumentParse: "Failed at the Document Parse stage",
+    stageInformationExtract: "Failed at the Information Extract stage",
+    stageSolar: "Failed at the Solar stage",
+    stageGeneric: "Failed at the {stage} stage",
+    pipelineStageMissing: "Not returned",
     unsupportedFile: "Supported formats: TXT, MD, PDF, DOCX, XLSX (HWP records filename only).",
     selectedFile: "Selected file",
     contextPlaceholder:
@@ -569,6 +583,14 @@ function normalizePipeline(value: unknown): HandoffResponse["pipeline"] {
   };
 }
 
+function formatStageLabel(stage: string, t: (typeof workbenchCopy)[Lang]): string {
+  const key = stage.trim();
+  if (key === "documentParse") return t.stageDocumentParse;
+  if (key === "informationExtract") return t.stageInformationExtract;
+  if (key === "solar") return t.stageSolar;
+  return t.stageGeneric.replace("{stage}", key);
+}
+
 function getDeliveryLabel(lang: Lang, value: HandoffRequest["deliveryType"]) {
   return deliveryOptionsByLang[lang].find((option) => option.value === value)?.label ?? value;
 }
@@ -810,6 +832,21 @@ function UpstagePipelineCard({
   const solar = pipeline?.solar;
   const awaiting = !pipeline;
 
+  // When the pipeline is present but a stage returned no real values, mark that stage
+  // as "not returned" instead of rendering silent dashes that read like success.
+  const hasValue = (...values: Array<string | number | undefined>) =>
+    values.some((v) => v !== undefined && v !== null && v !== "");
+  const parseMissing =
+    !awaiting && !hasValue(parse?.pageCount, parse?.charsExtracted, parse?.sourceType);
+  const extractMissing = !awaiting && !hasValue(extract?.schemaFields, extract?.fieldsPopulated);
+  const solarMissing = !awaiting && !hasValue(solar?.model, solar?.deliverablesGenerated);
+
+  const missingBadge = (
+    <span className="rounded-full border border-[#EE684E]/[0.35] bg-[#EE684E]/[0.10] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#FFE5DE]">
+      {t.pipelineStageMissing}
+    </span>
+  );
+
   return (
     <article className={`relative overflow-hidden rounded-xl p-5 ${glassPanel}`}>
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -828,7 +865,10 @@ function UpstagePipelineCard({
       <p className="mb-4 text-sm leading-6 text-[#a8b2c4]">{t.pipelineSummary}</p>
       <div className="grid gap-3 md:grid-cols-3">
         <div className={`rounded-lg p-4 ${glassField}`}>
-          <p className="text-xs font-semibold text-[#d7dceb]">01 · {t.pipelineParse}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-[#d7dceb]">01 · {t.pipelineParse}</p>
+            {parseMissing && missingBadge}
+          </div>
           <div className="mt-3 grid gap-1.5">
             <PipelineMetric label={t.pipelinePages} value={parse?.pageCount} />
             <PipelineMetric label={t.pipelineChars} value={parse?.charsExtracted} />
@@ -836,14 +876,20 @@ function UpstagePipelineCard({
           </div>
         </div>
         <div className={`rounded-lg p-4 ${glassField}`}>
-          <p className="text-xs font-semibold text-[#d7dceb]">02 · {t.pipelineExtract}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-[#d7dceb]">02 · {t.pipelineExtract}</p>
+            {extractMissing && missingBadge}
+          </div>
           <div className="mt-3 grid gap-1.5">
             <PipelineMetric label={t.pipelineSchema} value={extract?.schemaFields} />
             <PipelineMetric label={t.pipelineFields} value={extract?.fieldsPopulated} />
           </div>
         </div>
         <div className={`rounded-lg p-4 ${glassField}`}>
-          <p className="text-xs font-semibold text-[#d7dceb]">03 · {t.pipelineSolar}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-[#d7dceb]">03 · {t.pipelineSolar}</p>
+            {solarMissing && missingBadge}
+          </div>
           <div className="mt-3 grid gap-1.5">
             <PipelineMetric label={t.pipelineModel} value={solar?.model} />
             <PipelineMetric label={t.pipelineDeliverables} value={solar?.deliverablesGenerated} />
@@ -1269,6 +1315,7 @@ export function HandoffDemo({
   const tone: HandoffRequest["tone"] = "professional";
   const [transcript, setTranscript] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileNotice, setFileNotice] = useState("");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
@@ -1289,7 +1336,8 @@ export function HandoffDemo({
     setHistoryItems(readHistory());
   }, []);
 
-  const canSubmit = meetingTitle.trim().length > 0 && transcript.trim().length > 0;
+  const canSubmit =
+    meetingTitle.trim().length > 0 && (transcript.trim().length > 0 || selectedFile !== null);
   const inputType = classifyInputType(transcript);
 
   const metrics = useMemo(() => {
@@ -1307,14 +1355,18 @@ export function HandoffDemo({
     return { deliverableCount, evidenceCount, nextRunCount };
   }, [result]);
 
-  async function runHandoff(payload?: Partial<HandoffRequest>) {
-    const request = {
+  async function runHandoff(payload?: Partial<HandoffRequest>, fileForUpload?: File | null) {
+    // fileForUpload defaults to the attached file; the fallback retry passes null to
+    // send a text-only request after browser extraction.
+    const sourceFile = fileForUpload === undefined ? selectedFile : fileForUpload;
+    const request: HandoffRequest = {
       meetingTitle: payload?.meetingTitle ?? meetingTitle,
       transcript: payload?.transcript ?? transcript,
       deliveryType: payload?.deliveryType ?? deliveryType,
       recipient: payload?.recipient ?? recipient,
       tone: payload?.tone ?? tone,
       sourceFileName: selectedFileName || undefined,
+      sourceFile: sourceFile ?? undefined,
     };
 
     setLoading(true);
@@ -1324,6 +1376,15 @@ export function HandoffDemo({
       const response = await callN8n(request);
       const normalized = normalizeResponse(response);
       setRawResult(response);
+      // n8n returned a structured node failure: surface it as a failure, not success.
+      if (normalized._error) {
+        const stage = normalized._error.stage;
+        const stageLabel = stage ? formatStageLabel(stage, t) : null;
+        const detail = normalized._error.message || t.unknownError;
+        setError(stageLabel ? `${stageLabel}: ${detail}` : detail);
+        setActiveView("error");
+        return;
+      }
       const nextHistory = [
         {
           id: `${Date.now()}`,
@@ -1343,6 +1404,15 @@ export function HandoffDemo({
       saveHistory(nextHistory);
       setActiveView("dashboard");
     } catch (err) {
+      // The multipart upload path failed. If a file is attached and we haven't already
+      // fallen back, extract its text in the browser and retry once WITHOUT the binary.
+      if (request.sourceFile) {
+        const mergedTranscript = await runFallbackExtraction(request.sourceFile);
+        if (mergedTranscript) {
+          await runHandoff({ transcript: mergedTranscript }, null);
+          return;
+        }
+      }
       setError(err instanceof Error ? err.message : t.unknownError);
       setActiveView("error");
     } finally {
@@ -1355,6 +1425,9 @@ export function HandoffDemo({
     await runHandoff();
   }
 
+  // Browser-side extraction is kept ONLY as a fallback (see runFallbackExtraction).
+  // On the happy path the raw file is sent to n8n as the "sourceFile" binary part so
+  // Upstage Document Parse → Information Extract → Solar run as real API calls.
   async function handleFileChange(file: File | undefined) {
     if (!file) return;
     const name = file.name;
@@ -1372,6 +1445,7 @@ export function HandoffDemo({
 
     if (isHwp) {
       setSelectedFileName(name);
+      setSelectedFile(null);
       setTranscript((value) =>
         [value, `\n\n[HWP source selected: ${name}]`].filter(Boolean).join("\n"),
       );
@@ -1379,37 +1453,40 @@ export function HandoffDemo({
       return;
     }
 
+    // Attach the raw file; do NOT pre-extract text. Upstage parses it server-side.
     setSelectedFileName(name);
-    if (isText) {
-      const content = await file.text();
-      setTranscript((value) =>
-        [value, `\n\n--- ${name} ---\n${content}`].filter(Boolean).join("\n"),
-      );
-      setFileNotice(t.fileLoaded);
-      return;
-    }
+    setSelectedFile(file);
+    setFileNotice(t.fileLoaded);
+  }
 
-    const extractor: { run: (f: File) => Promise<string>; okKey: string; failKey: string } = isPdf
-      ? { run: extractPdfText, okKey: "pdfExtracted", failKey: "pdfExtractFailed" }
-      : isDocx
-        ? { run: extractDocxText, okKey: "docxExtracted", failKey: "docxExtractFailed" }
-        : { run: extractXlsxText, okKey: "xlsxExtracted", failKey: "xlsxExtractFailed" };
+  // Fallback: only runs when the multipart upload path to n8n fails. Extracts text
+  // in the browser, appends it to the transcript, and labels it as fallback extraction.
+  async function runFallbackExtraction(file: File): Promise<string | null> {
+    const name = file.name;
+    const extension = name.split(".").pop()?.toLowerCase();
+    const isText = extension === "txt" || extension === "md" || file.type.startsWith("text/");
+    const isPdf = extension === "pdf" || file.type === "application/pdf";
+    const isDocx = extension === "docx";
 
+    let text = "";
     try {
-      const text = await extractor.run(file);
-      if (text.trim().length === 0) {
-        throw new Error("empty extracted text");
+      if (isText) {
+        text = await file.text();
+      } else if (isPdf) {
+        text = await extractPdfText(file);
+      } else if (isDocx) {
+        text = await extractDocxText(file);
+      } else {
+        text = await extractXlsxText(file);
       }
-      setTranscript((value) => [value, `\n\n--- ${name} ---\n${text}`].filter(Boolean).join("\n"));
-      const okMessage = (t as Record<string, string>)[extractor.okKey] || t.fileLoaded;
-      setFileNotice(okMessage.replace("{count}", String(text.length)));
     } catch {
-      setTranscript((value) =>
-        [value, `\n\n[source selected: ${name}]`].filter(Boolean).join("\n"),
-      );
-      const failMessage = (t as Record<string, string>)[extractor.failKey] || t.pdfExtractFailed;
-      setFileNotice(failMessage);
+      return null;
     }
+    if (!text.trim().length) return null;
+    const merged = [transcript, `\n\n--- ${name} ---\n${text}`].filter(Boolean).join("\n");
+    setTranscript(merged);
+    setFileNotice(t.fallbackExtraction);
+    return merged;
   }
 
   async function handleCopyResult() {
@@ -1454,6 +1531,7 @@ export function HandoffDemo({
     setRecipient("");
     setTranscript("");
     setSelectedFileName("");
+    setSelectedFile(null);
     setFileNotice("");
     setCopyStatus("idle");
     setRawResult(null);
@@ -1468,6 +1546,7 @@ export function HandoffDemo({
     setRecipient(item.recipient || "");
     setTranscript(item.transcript || "");
     setSelectedFileName("");
+    setSelectedFile(null);
     setFileNotice("");
     setCopyStatus("idle");
     setError(null);
