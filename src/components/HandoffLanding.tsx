@@ -62,12 +62,13 @@ export function HandoffLanding() {
       <header className="sticky top-0 z-50 border-b border-[var(--d-border)] bg-[var(--d-bg)]/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <button
-            className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-[var(--d-fg)]"
+            className="flex items-center gap-2 text-lg font-bold tracking-tight text-[var(--d-fg)]"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             <img src={handoffLogo} alt="HandOff logo" className="h-8 w-8 object-contain" />
             Hand<span className="text-[var(--d-muted)]">Off</span>
           </button>
+
           <div className="hidden md:block" />
           <div className="flex items-center gap-2">
             <div className="flex rounded-full bg-[var(--d-surface)] p-1">
