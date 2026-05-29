@@ -156,7 +156,8 @@ export function HandoffLanding() {
           <div className="flex justify-center">
             <Pill>{t.process.pill}</Pill>
           </div>
-          <h2 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+          <h2 className="mt-5 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+
             {t.process.titleA} <span className="text-[var(--d-faded)]">{t.process.titleFaded}</span>
           </h2>
           <p className="mt-4 text-base text-[var(--d-muted)]">{t.process.body}</p>
