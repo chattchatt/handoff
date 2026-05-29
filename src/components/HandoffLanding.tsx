@@ -253,10 +253,8 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
   );
 }
 
-
 export function HandoffLanding() {
   const [lang, setLang] = useState<Lang>(getInitialLang);
-  const [commandsCopied, setCommandsCopied] = useState(false);
   const auth = useAuth();
   const text = copy[lang];
   const nav = text.nav as Record<string, string>;
@@ -268,12 +266,6 @@ export function HandoffLanding() {
     window.history.replaceState({}, "", url.toString());
   }
 
-  async function copyAllCommands() {
-    if (await writeClipboardText(ALL_COMMANDS)) {
-      setCommandsCopied(true);
-      window.setTimeout(() => setCommandsCopied(false), 1500);
-    }
-  }
 
   return (
     <main
