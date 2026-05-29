@@ -6,7 +6,6 @@ import { useAuth } from "@/lib/use-auth";
 type Lang = "ko" | "en";
 
 const GITHUB_URL = "https://github.com/chattchatt/handoff";
-const CLONE_COMMAND = "git clone https://github.com/chattchatt/handoff.git";
 
 const copy = {
   ko: {
