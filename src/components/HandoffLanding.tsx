@@ -331,7 +331,7 @@ export function HandoffLanding() {
           <div className="flex justify-center">
             <Pill>{t.faq.eyebrow}</Pill>
           </div>
-          <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">{t.faq.title}</h2>
+          <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">{t.faq.title}</h2>
           <p className="mt-4 text-base text-[var(--d-muted)]">{t.faq.body}</p>
         </Reveal>
         <div className="mt-10 space-y-3">
