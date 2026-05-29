@@ -307,7 +307,7 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
     <span className="flex items-center gap-3">
       <img
         className={compact ? "h-8 w-8" : "h-11 w-11"}
-        src="/handoff-logo.png"
+        src="/handoff-logo.svg"
         alt="HandOff logo"
       />
       <span className="grid leading-tight">
