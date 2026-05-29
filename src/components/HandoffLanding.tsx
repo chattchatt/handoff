@@ -30,7 +30,7 @@ export function HandoffLanding() {
   }
 
   return (
-    <div className="daval-landing min-h-screen overflow-x-hidden">
+    <div className="handoff-landing min-h-screen overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-[var(--d-border)] bg-[var(--d-bg)]/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
