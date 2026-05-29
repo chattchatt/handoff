@@ -80,7 +80,7 @@ export const copy: Record<Lang, Content> = {
   ko: {
     nav: { process: "작동 방식", services: "기능", pricing: "요금제", faq: "자주 묻는 질문" },
     cta: {
-      start: "워크벤치 열기",
+      start: "자료 넘기기",
       github: "GitHub로 시작하기",
       explore: "작동 방식 보기",
       pricing: "요금제 보기",
@@ -279,7 +279,7 @@ export const copy: Record<Lang, Content> = {
   en: {
     nav: { process: "How it works", services: "Features", pricing: "Pricing", faq: "FAQ" },
     cta: {
-      start: "Open Workbench",
+      start: "Hand it off",
       github: "Continue with GitHub",
       explore: "See how it works",
       pricing: "View Pricing",
