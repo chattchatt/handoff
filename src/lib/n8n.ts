@@ -106,8 +106,12 @@ export async function callN8n(data: HandoffRequest): Promise<unknown> {
     );
   }
 
+  // Real 3-API pipeline (Document Parse -> Information Extraction -> Solar) runs
+  // server-side in n8n; Document Parse alone can take 10-30s on a PDF, so the
+  // client must wait well past the old 20s (Solar-only) budget.
+  const REQUEST_TIMEOUT_MS = 120000;
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 20000);
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   // multipart/form-data so the raw file reaches n8n alongside the text fields.
   // Content-Type is intentionally NOT set — fetch adds the multipart boundary.
@@ -130,7 +134,7 @@ export async function callN8n(data: HandoffRequest): Promise<unknown> {
   } catch (error) {
     const message =
       error instanceof DOMException && error.name === "AbortError"
-        ? "n8n 호출 시간이 20초를 초과했습니다."
+        ? "n8n 호출 시간이 120초를 초과했습니다."
         : error instanceof Error
           ? error.message
           : "n8n 호출 중 네트워크 오류가 발생했습니다.";
