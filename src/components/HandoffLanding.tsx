@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Star, Plus, Minus, Check, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Star, Plus, Minus, Check, X, Github, LogOut } from "lucide-react";
 import { copy, type Lang } from "@/components/landing/content";
+import { useAuth } from "@/lib/use-auth";
 import {
   Reveal,
   Pill,
@@ -21,6 +22,31 @@ export function HandoffLanding() {
   const [lang, setLang] = useState<Lang>(getInitialLang);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const t = copy[lang];
+  const auth = useAuth();
+
+  function handleStart() {
+    // Require GitHub login before entering the workbench.
+    if (!auth.configured || auth.loggedIn) {
+      goToWorkbench();
+    } else {
+      void auth.login();
+    }
+  }
+
+  function StartButton({ children }: { children?: ReactNode }) {
+    return (
+      <PrimaryButton onClick={handleStart}>
+        {!auth.configured || auth.loggedIn ? (
+          children ?? t.cta.start
+        ) : (
+          <>
+            <Github className="mr-2 h-4 w-4" />
+            {t.cta.github}
+          </>
+        )}
+      </PrimaryButton>
+    );
+  }
 
   function changeLang(next: Lang) {
     setLang(next);
