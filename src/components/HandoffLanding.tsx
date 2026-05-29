@@ -242,7 +242,7 @@ export function HandoffLanding() {
           'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
-      <HeroMemoryScene />
+      
       <div className="pointer-events-none fixed inset-0 z-[2] bg-[radial-gradient(circle_at_24%_22%,rgba(255,255,255,0.10),transparent_24%),radial-gradient(circle_at_72%_20%,rgba(151,179,255,0.10),transparent_28%),linear-gradient(180deg,rgba(3,4,7,0.03),rgba(3,4,7,0.38)_62%,rgba(3,4,7,0.84))]" />
 
       <header className="sticky top-0 z-40 border-b border-white/[0.12] bg-[#1A1F31]/[0.58] shadow-[inset_0_-1px_0_rgba(255,255,255,0.04)] backdrop-blur-2xl">
