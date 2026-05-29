@@ -147,7 +147,7 @@ export function HandoffLanding() {
           </div>
         </Reveal>
         <Reveal delay={0.2} className="mt-14">
-          <VideoFrame tilt="none" variant={0} label={lang === "ko" ? "영상이 들어갈 자리" : "Video goes here"} />
+          <VideoFrame tilt="none" variant={0} src="/videos/main.mp4" />
         </Reveal>
       </section>
 
