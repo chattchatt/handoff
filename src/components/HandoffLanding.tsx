@@ -55,6 +55,7 @@ const copy = {
       "Paste meeting notes, memos, issues, or requests and Handoff organizes them into a summary, decisions, next steps, and evidence — so the next teammate or AI can continue the work right away.",
     openGithub: "Open GitHub",
     loginAria: "Sign in with GitHub",
+    connectLabel: "Connect GitHub",
     logoutAria: "Sign out",
     demoCta: "Organize it now",
     previewCta: "See an example",
