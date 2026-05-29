@@ -185,7 +185,6 @@ const processSteps: Record<Lang, string[]> = {
 const glassSurface =
   "border border-white/[0.16] bg-white/[0.075] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(255,255,255,0.05),0_24px_90px_rgba(0,0,0,0.38)] backdrop-blur-2xl";
 
-
 function getInitialLang(): Lang {
   if (typeof window === "undefined") return "ko";
   return new URLSearchParams(window.location.search).get("lang") === "en" ? "en" : "ko";
