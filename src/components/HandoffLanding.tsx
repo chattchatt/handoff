@@ -175,9 +175,10 @@ export function HandoffLanding() {
                   <p className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--d-muted)]">
                     {row.index} · {row.label}
                   </p>
-                  <h3 className="mt-4 text-2xl font-extrabold leading-snug tracking-tight sm:text-3xl">
+                  <h3 className="mt-4 text-2xl font-semibold leading-snug tracking-tight sm:text-3xl">
                     {row.title}
                   </h3>
+
                   <p className="mt-4 max-w-md text-base leading-7 text-[var(--d-muted)]">
                     {row.body}
                   </p>
