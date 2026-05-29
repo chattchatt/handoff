@@ -36,7 +36,7 @@ export function Reveal({
 
 export function Pill({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-[var(--d-surface)] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-[var(--d-muted)]">
+    <span className="inline-flex items-center rounded-md border border-[var(--d-border)] bg-[var(--d-bg-2)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--d-muted)] backdrop-blur-xl">
       {children}
     </span>
   );
@@ -44,7 +44,9 @@ export function Pill({ children }: { children: ReactNode }) {
 
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--d-muted)]">{children}</p>
+    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--d-muted)]">
+      {children}
+    </p>
   );
 }
 
@@ -59,7 +61,7 @@ export function PrimaryButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center justify-center rounded-full bg-[var(--d-primary)] px-7 py-3.5 text-sm font-bold text-[var(--d-primary-fg)] shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
+      className="inline-flex items-center justify-center rounded-lg border border-[#5D7EEB]/40 bg-[#5D7EEB] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_36px_rgba(93,126,235,0.35),inset_0_1px_0_rgba(255,255,255,0.18)] transition hover:-translate-y-0.5 hover:bg-[#6f8cf0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
     >
       {children}
     </button>
@@ -79,11 +81,11 @@ export function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--d-surface)] px-7 py-3.5 text-sm font-bold text-[var(--d-fg)] transition hover:bg-[var(--d-surface-2)]"
+      className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-semibold text-[var(--d-fg)] backdrop-blur-xl transition hover:border-[#5D7EEB]/40 hover:bg-[#5D7EEB]/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
     >
       {children}
       {withPlay && (
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--d-primary)] text-[var(--d-primary-fg)]">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#5D7EEB] text-white">
           <Play className="h-2.5 w-2.5 fill-current" />
         </span>
       )}
@@ -92,7 +94,7 @@ export function SecondaryButton({
 }
 
 /**
- * Tilted device frame, themed for the dark design system.
+ * Glass device frame, matched to the /app workbench surfaces.
  * Drop a video later by passing `src` (mp4) + optional `poster`.
  */
 export function VideoFrame({
@@ -111,17 +113,17 @@ export function VideoFrame({
   const rotateY = tilt === "right" ? "-9deg" : tilt === "left" ? "9deg" : "0deg";
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-[var(--d-border)] bg-[var(--d-surface)] p-6 sm:p-10">
+    <div className="glass-panel relative overflow-hidden rounded-2xl p-6 sm:p-10">
       <div
-        className="overflow-hidden rounded-xl border border-[var(--d-border-strong)] bg-[var(--d-bg-2)] shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
+        className="overflow-hidden rounded-xl border border-white/[0.14] bg-[#0b0f1c] shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
         style={{ transform: `perspective(1700px) rotateY(${rotateY}) rotateX(3deg)` }}
       >
         {/* browser chrome */}
-        <div className="flex items-center gap-1.5 border-b border-[var(--d-border)] bg-[var(--d-surface-2)] px-4 py-2.5">
+        <div className="flex items-center gap-1.5 border-b border-white/[0.1] bg-white/[0.04] px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-          <span className="ml-3 hidden truncate rounded-md bg-[var(--d-bg)] px-3 py-1 text-[10px] text-[var(--d-muted)] sm:block">
+          <span className="ml-3 hidden truncate rounded-md bg-white/[0.06] px-3 py-1 text-[10px] text-[var(--d-muted)] sm:block">
             HandOff
           </span>
         </div>
@@ -137,9 +139,9 @@ export function VideoFrame({
             playsInline
           />
         ) : (
-          <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-3 bg-[var(--d-bg)] text-[var(--d-muted)]">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--d-surface)]">
-              <Play className="h-5 w-5 fill-current" />
+          <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-3 bg-[radial-gradient(circle_at_30%_20%,rgba(93,126,235,0.12),transparent_55%)] text-[var(--d-muted)]">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.06]">
+              <Play className="h-5 w-5 fill-current text-[#8fb3ff]" />
             </span>
             <span className="text-xs font-semibold tracking-wide">
               {label ?? "영상이 들어갈 자리"}
