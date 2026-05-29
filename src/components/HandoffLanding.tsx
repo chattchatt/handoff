@@ -435,28 +435,12 @@ export function HandoffLanding() {
 
       {/* Footer */}
       <footer className="border-t border-[var(--d-border)] bg-[var(--d-bg-2)]">
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <p className="flex items-center gap-2 text-lg font-extrabold tracking-tight">
-              <img src={handoffLogo} alt="HandOff logo" className="h-8 w-8 object-contain" />
-              Hand<span className="text-[var(--d-muted)]">Off</span>
-            </p>
-            <p className="mt-3 max-w-xs text-sm leading-6 text-[var(--d-muted)]">{t.footer.tagline}</p>
-          </div>
-          {t.footer.cols.map((col) => (
-            <div key={col.title}>
-              <p className="text-sm font-bold">{col.title}</p>
-              <ul className="mt-4 space-y-2.5">
-                {col.links.map((link) => (
-                  <li key={link}>
-                    <span className="cursor-pointer text-sm text-[var(--d-muted)] hover:text-[var(--d-fg)]">
-                      {link}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-5 py-14 text-center">
+          <p className="flex items-center gap-2 text-lg font-extrabold tracking-tight">
+            <img src={handoffLogo} alt="HandOff logo" className="h-8 w-8 object-contain" />
+            Hand<span className="text-[var(--d-muted)]">Off</span>
+          </p>
+          <p className="max-w-xs text-sm leading-6 text-[var(--d-muted)]">{t.footer.tagline}</p>
         </div>
         <div className="border-t border-[var(--d-border)] px-5 py-6 text-center text-xs text-[var(--d-muted)]">
           {t.footer.rights}
