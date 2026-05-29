@@ -125,12 +125,13 @@ export function HandoffLanding() {
           <span className="text-sm font-semibold text-[var(--d-muted)]">{t.hero.eyebrow}</span>
         </Reveal>
         <Reveal delay={0.05}>
-          <h1 className="whitespace-pre-line text-4xl font-extrabold leading-[1.12] tracking-tight text-[var(--d-fg)] sm:text-6xl">
+          <h1 className="whitespace-pre-line text-4xl font-semibold leading-[1.12] tracking-tight text-[var(--d-fg)] sm:text-6xl">
             {t.hero.titleA}
-            <span className="font-serif-accent italic">{t.hero.titleAccent}</span>
+            <span className="font-serif-accent">{t.hero.titleAccent}</span>
             {t.hero.titleB}
           </h1>
         </Reveal>
+
         <Reveal delay={0.1}>
           <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-[var(--d-muted)]">
             {t.hero.body}
