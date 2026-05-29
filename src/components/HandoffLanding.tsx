@@ -228,11 +228,12 @@ export function HandoffLanding() {
             <div className="inline-block">
               <Pill>{t.timeline.pill}</Pill>
             </div>
-            <h2 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+            <h2 className="mt-5 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               {t.timeline.titleA}
               <span className="text-[var(--d-faded)]">{t.timeline.titleFaded}</span>
               {t.timeline.titleB}
             </h2>
+
             <p className="mt-4 max-w-md text-base leading-7 text-[var(--d-muted)]">
               {t.timeline.body}
             </p>
