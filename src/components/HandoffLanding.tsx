@@ -339,7 +339,7 @@ export function HandoffLanding() {
             const open = openFaq === i;
             return (
               <Reveal key={item.q} delay={i * 0.03}>
-                <div className="overflow-hidden rounded-2xl border border-[var(--d-border)] bg-[var(--d-bg-2)]">
+                <div className="glass-panel overflow-hidden rounded-2xl">
                   <button
                     className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
                     onClick={() => setOpenFaq(open ? null : i)}
