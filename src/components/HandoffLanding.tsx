@@ -402,7 +402,7 @@ export function HandoffLanding() {
         </div>
       </section>
 
-      <section id="how" className="relative z-10 mx-auto max-w-7xl px-5 py-16">
+      <section id="how" className="relative z-10 mx-auto max-w-7xl px-5 pb-28 pt-16">
         <div className="grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:items-start">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
@@ -412,8 +412,8 @@ export function HandoffLanding() {
             <p className="mt-4 text-sm leading-6 text-[#a8b2c4] md:text-base">
               {text.howBody as string}
             </p>
-            
           </div>
+
           <div className="grid gap-3 md:grid-cols-4">
             {processSteps[lang].map((item, index) => (
               <div key={item} className={`rounded-lg p-4 ${glassSurface}`}>
