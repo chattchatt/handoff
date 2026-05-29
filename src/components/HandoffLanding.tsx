@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Star, Plus, Minus, Check, X, Github, LogOut } from "lucide-react";
 import { copy, type Lang } from "@/components/landing/content";
+import handoffLogo from "@/assets/handoff-logo.png";
 import { useAuth } from "@/lib/use-auth";
 import {
   Reveal,
@@ -61,9 +62,10 @@ export function HandoffLanding() {
       <header className="sticky top-0 z-50 border-b border-[var(--d-border)] bg-[var(--d-bg)]/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <button
-            className="text-lg font-extrabold tracking-tight text-[var(--d-fg)]"
+            className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-[var(--d-fg)]"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
+            <img src={handoffLogo} alt="HandOff logo" className="h-8 w-8 object-contain" />
             Hand<span className="text-[var(--d-muted)]">Off</span>
           </button>
           <nav className="hidden items-center gap-8 text-sm font-semibold text-[var(--d-muted)] md:flex">
@@ -448,7 +450,8 @@ export function HandoffLanding() {
       <footer className="border-t border-[var(--d-border)] bg-[var(--d-bg-2)]">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <p className="text-lg font-extrabold tracking-tight">
+            <p className="flex items-center gap-2 text-lg font-extrabold tracking-tight">
+              <img src={handoffLogo} alt="HandOff logo" className="h-8 w-8 object-contain" />
               Hand<span className="text-[var(--d-muted)]">Off</span>
             </p>
             <p className="mt-3 max-w-xs text-sm leading-6 text-[var(--d-muted)]">{t.footer.tagline}</p>
