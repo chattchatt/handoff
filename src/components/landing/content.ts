@@ -465,10 +465,7 @@ export const copy: Record<Lang, Content> = {
       tagline: "Meeting notes, PDFs, scattered memos — into work people and AI do together. Just hand it off.",
       rights: "© 2026 HandOff. All rights reserved.",
       cols: [
-        { title: "Product", links: ["How it works", "Features", "Pricing", "FAQ"] },
-        { title: "Company", links: ["About", "Blog", "Contact"] },
-        { title: "Legal", links: ["Terms", "Privacy", "Security"] },
-      ],
+      cols: [],
     },
   },
 };
