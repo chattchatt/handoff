@@ -443,12 +443,13 @@ export function HandoffLanding() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--d-border)] bg-[var(--d-bg-2)]">
+      <footer className="border-t border-[var(--d-border)] bg-white/[0.02] backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-5 py-14 text-center">
-          <p className="flex items-center gap-2 text-lg font-extrabold tracking-tight">
+          <p className="flex items-center gap-2 text-lg font-bold tracking-tight">
             <img src={handoffLogo} alt="HandOff logo" className="h-8 w-8 object-contain" />
             Hand<span className="text-[var(--d-muted)]">Off</span>
           </p>
+
           <p className="max-w-xs text-sm leading-6 text-[var(--d-muted)]">{t.footer.tagline}</p>
         </div>
         <div className="border-t border-[var(--d-border)] px-5 py-6 text-center text-xs text-[var(--d-muted)]">
