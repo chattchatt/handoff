@@ -84,7 +84,9 @@ const pipelineStepsByLang: Record<Lang, string[]> = {
   ko: [
     "Input Context",
     "n8n Runtime",
-    "Upstage Analysis",
+    "Document Parse",
+    "Information Extract",
+    "Solar LLM",
     "Execution Memory",
     "Evidence",
     "Follow-up Work",
@@ -92,7 +94,9 @@ const pipelineStepsByLang: Record<Lang, string[]> = {
   en: [
     "Input Context",
     "n8n Runtime",
-    "Upstage Analysis",
+    "Document Parse",
+    "Information Extract",
+    "Solar LLM",
     "Execution Memory",
     "Evidence",
     "Follow-up Work",
@@ -226,6 +230,21 @@ const workbenchCopy = {
     checklistSummary: "이어받는 담당자가 확인해야 할 품질 기준입니다.",
     nextVerificationEmpty: "다음 검증 단계가 비어 있습니다.",
     verificationAction: "검증 후 근거 자료를 업데이트하세요.",
+    pipelineEyebrow: "Upstage",
+    pipelineTitle: "Upstage 파이프라인",
+    pipelineSummary:
+      "Document Parse → Information Extract → Solar 세 API가 입력을 실행 기억으로 변환합니다.",
+    pipelineAwaiting: "API 귀속 데이터 대기 중",
+    pipelineParse: "Document Parse",
+    pipelineExtract: "Information Extract",
+    pipelineSolar: "Solar",
+    pipelinePages: "페이지",
+    pipelineChars: "추출 문자",
+    pipelineSource: "소스 유형",
+    pipelineSchema: "스키마 필드",
+    pipelineFields: "채워진 필드",
+    pipelineModel: "모델",
+    pipelineDeliverables: "생성 산출물",
     publishEyebrow: "Publish",
     publishTitle: "이슈로 발행",
     publishSummary:
@@ -374,6 +393,21 @@ const workbenchCopy = {
     checklistSummary: "Quality checks the next executor should verify.",
     nextVerificationEmpty: "No next verification step was returned.",
     verificationAction: "Update the context evidence after verification.",
+    pipelineEyebrow: "Upstage",
+    pipelineTitle: "Upstage pipeline",
+    pipelineSummary:
+      "Three APIs — Document Parse → Information Extract → Solar — turn input into execution memory.",
+    pipelineAwaiting: "Awaiting per-API attribution",
+    pipelineParse: "Document Parse",
+    pipelineExtract: "Information Extract",
+    pipelineSolar: "Solar",
+    pipelinePages: "Pages",
+    pipelineChars: "Chars extracted",
+    pipelineSource: "Source type",
+    pipelineSchema: "Schema fields",
+    pipelineFields: "Fields populated",
+    pipelineModel: "Model",
+    pipelineDeliverables: "Deliverables",
     publishEyebrow: "Publish",
     publishTitle: "Publish as GitHub issue",
     publishSummary:
@@ -491,9 +525,47 @@ function normalizeResponse(raw: unknown): HandoffResponse {
         asString(root.next_verification_step),
       ),
     },
+    pipeline: normalizePipeline(root.pipeline),
     _warnings: asStringArray(root._warnings),
     _error: root._error === null ? null : (asRecord(root._error) as HandoffResponse["_error"]),
     _raw: root._raw,
+  };
+}
+
+function asNumber(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) {
+    return Number(value);
+  }
+  return undefined;
+}
+
+function asStringOrUndefined(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim()) return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return undefined;
+}
+
+function normalizePipeline(value: unknown): HandoffResponse["pipeline"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const root = asRecord(value);
+  const parse = asRecord(root.documentParse);
+  const extract = asRecord(root.informationExtract);
+  const solar = asRecord(root.solar);
+  return {
+    documentParse: {
+      pageCount: asNumber(parse.pageCount),
+      charsExtracted: asNumber(parse.charsExtracted),
+      sourceType: asStringOrUndefined(parse.sourceType),
+    },
+    informationExtract: {
+      schemaFields: asNumber(extract.schemaFields),
+      fieldsPopulated: asNumber(extract.fieldsPopulated),
+    },
+    solar: {
+      model: asStringOrUndefined(solar.model),
+      deliverablesGenerated: asNumber(solar.deliverablesGenerated),
+    },
   };
 }
 
@@ -715,6 +787,72 @@ const IMPORTANCE_STYLE: Record<Importance, { bar: string; badge: string }> = {
     badge: "border-[#7D98EE]/[0.45] bg-[#7D98EE]/[0.16] text-white",
   },
 };
+
+function PipelineMetric({ label, value }: { label: string; value?: string | number }) {
+  const display = value === undefined || value === null || value === "" ? "—" : String(value);
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="text-xs text-[#9aa3b5]">{label}</span>
+      <span className="text-sm font-semibold tabular-nums text-[#e8edf6]">{display}</span>
+    </div>
+  );
+}
+
+function UpstagePipelineCard({
+  pipeline,
+  t,
+}: {
+  pipeline: HandoffResponse["pipeline"];
+  t: (typeof workbenchCopy)[Lang];
+}) {
+  const parse = pipeline?.documentParse;
+  const extract = pipeline?.informationExtract;
+  const solar = pipeline?.solar;
+  const awaiting = !pipeline;
+
+  return (
+    <article className={`relative overflow-hidden rounded-xl p-5 ${glassPanel}`}>
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7d8798]">
+            {t.pipelineEyebrow}
+          </p>
+          <h3 className="mt-1 text-lg font-bold text-[#f6f4ee]">{t.pipelineTitle}</h3>
+        </div>
+        {awaiting && (
+          <span className="rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9aa3b5]">
+            {t.pipelineAwaiting}
+          </span>
+        )}
+      </div>
+      <p className="mb-4 text-sm leading-6 text-[#a8b2c4]">{t.pipelineSummary}</p>
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className={`rounded-lg p-4 ${glassField}`}>
+          <p className="text-xs font-semibold text-[#d7dceb]">01 · {t.pipelineParse}</p>
+          <div className="mt-3 grid gap-1.5">
+            <PipelineMetric label={t.pipelinePages} value={parse?.pageCount} />
+            <PipelineMetric label={t.pipelineChars} value={parse?.charsExtracted} />
+            <PipelineMetric label={t.pipelineSource} value={parse?.sourceType} />
+          </div>
+        </div>
+        <div className={`rounded-lg p-4 ${glassField}`}>
+          <p className="text-xs font-semibold text-[#d7dceb]">02 · {t.pipelineExtract}</p>
+          <div className="mt-3 grid gap-1.5">
+            <PipelineMetric label={t.pipelineSchema} value={extract?.schemaFields} />
+            <PipelineMetric label={t.pipelineFields} value={extract?.fieldsPopulated} />
+          </div>
+        </div>
+        <div className={`rounded-lg p-4 ${glassField}`}>
+          <p className="text-xs font-semibold text-[#d7dceb]">03 · {t.pipelineSolar}</p>
+          <div className="mt-3 grid gap-1.5">
+            <PipelineMetric label={t.pipelineModel} value={solar?.model} />
+            <PipelineMetric label={t.pipelineDeliverables} value={solar?.deliverablesGenerated} />
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 function GitHubPublishCard({
   result,
@@ -1852,6 +1990,9 @@ export function HandoffDemo({
             {t.countSuffix} {t.missingEvidence}
             {result.harness.nextVerificationStep ? ` · ${result.harness.nextVerificationStep}` : ""}
           </p>
+        </div>
+        <div className="xl:col-span-2">
+          <UpstagePipelineCard pipeline={result.pipeline} t={t} />
         </div>
         <div className="xl:col-span-2">
           <GitHubPublishCard result={result} meetingTitle={meetingTitle} lang={lang} t={t} />

@@ -40,6 +40,11 @@ export type HandoffResponse = {
     qualityChecklist: string[];
     nextVerificationStep: string;
   };
+  pipeline?: {
+    documentParse?: { pageCount?: number; charsExtracted?: number; sourceType?: string };
+    informationExtract?: { schemaFields?: number; fieldsPopulated?: number };
+    solar?: { model?: string; deliverablesGenerated?: number };
+  };
   _warnings?: string[];
   _error?: {
     code?: string;
