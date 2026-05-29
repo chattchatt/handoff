@@ -59,15 +59,16 @@ export function HandoffLanding() {
   return (
     <div className="handoff-landing min-h-screen overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-[var(--d-border)] bg-[var(--d-bg)]/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-[var(--d-border)] bg-[#1a1f31]/80 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <button
-            className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-[var(--d-fg)]"
+            className="flex items-center gap-2 text-lg font-bold tracking-tight text-[var(--d-fg)]"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             <img src={handoffLogo} alt="HandOff logo" className="h-8 w-8 object-contain" />
             Hand<span className="text-[var(--d-muted)]">Off</span>
           </button>
+
           <div className="hidden md:block" />
           <div className="flex items-center gap-2">
             <div className="flex rounded-full bg-[var(--d-surface)] p-1">
@@ -124,12 +125,13 @@ export function HandoffLanding() {
           <span className="text-sm font-semibold text-[var(--d-muted)]">{t.hero.eyebrow}</span>
         </Reveal>
         <Reveal delay={0.05}>
-          <h1 className="whitespace-pre-line text-4xl font-extrabold leading-[1.12] tracking-tight text-[var(--d-fg)] sm:text-6xl">
+          <h1 className="whitespace-pre-line text-4xl font-semibold leading-[1.12] tracking-tight text-[var(--d-fg)] sm:text-6xl">
             {t.hero.titleA}
-            <span className="font-serif-accent italic">{t.hero.titleAccent}</span>
+            <span className="font-serif-accent">{t.hero.titleAccent}</span>
             {t.hero.titleB}
           </h1>
         </Reveal>
+
         <Reveal delay={0.1}>
           <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-[var(--d-muted)]">
             {t.hero.body}
@@ -154,7 +156,8 @@ export function HandoffLanding() {
           <div className="flex justify-center">
             <Pill>{t.process.pill}</Pill>
           </div>
-          <h2 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+          <h2 className="mt-5 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+
             {t.process.titleA} <span className="text-[var(--d-faded)]">{t.process.titleFaded}</span>
           </h2>
           <p className="mt-4 text-base text-[var(--d-muted)]">{t.process.body}</p>
@@ -172,9 +175,10 @@ export function HandoffLanding() {
                   <p className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--d-muted)]">
                     {row.index} · {row.label}
                   </p>
-                  <h3 className="mt-4 text-2xl font-extrabold leading-snug tracking-tight sm:text-3xl">
+                  <h3 className="mt-4 text-2xl font-semibold leading-snug tracking-tight sm:text-3xl">
                     {row.title}
                   </h3>
+
                   <p className="mt-4 max-w-md text-base leading-7 text-[var(--d-muted)]">
                     {row.body}
                   </p>
@@ -197,7 +201,7 @@ export function HandoffLanding() {
         <div className="mx-auto max-w-6xl px-5">
           <Reveal className="max-w-2xl">
             <Eyebrow>{t.services.eyebrow}</Eyebrow>
-            <h2 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+            <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               {t.services.title}
             </h2>
             <p className="mt-4 text-base text-[var(--d-muted)]">{t.services.body}</p>
@@ -205,13 +209,14 @@ export function HandoffLanding() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2">
             {t.services.items.map((s, i) => (
               <Reveal key={s.index} delay={i * 0.05}>
-                <div className="h-full rounded-3xl border border-[var(--d-border)] bg-[var(--d-bg)] p-7">
-                  <span className="text-sm font-extrabold text-[var(--d-faded)]">{s.index}</span>
-                  <h3 className="mt-3 text-xl font-extrabold tracking-tight">{s.name}</h3>
+                <div className="glass-panel h-full rounded-2xl p-7">
+                  <span className="text-sm font-bold text-[var(--d-faded)]">{s.index}</span>
+                  <h3 className="mt-3 text-xl font-semibold tracking-tight">{s.name}</h3>
                   <p className="mt-3 text-sm leading-6 text-[var(--d-muted)]">{s.body}</p>
                 </div>
               </Reveal>
             ))}
+
           </div>
         </div>
       </section>
@@ -223,11 +228,12 @@ export function HandoffLanding() {
             <div className="inline-block">
               <Pill>{t.timeline.pill}</Pill>
             </div>
-            <h2 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+            <h2 className="mt-5 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               {t.timeline.titleA}
               <span className="text-[var(--d-faded)]">{t.timeline.titleFaded}</span>
               {t.timeline.titleB}
             </h2>
+
             <p className="mt-4 max-w-md text-base leading-7 text-[var(--d-muted)]">
               {t.timeline.body}
             </p>
@@ -244,16 +250,17 @@ export function HandoffLanding() {
               {t.timeline.steps.map((step, i) => (
                 <Reveal key={step.index} delay={i * 0.08}>
                   <div className="flex gap-5">
-                    <span className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[var(--d-border-strong)] bg-[var(--d-bg)] text-base font-extrabold text-[var(--d-fg)]">
+                    <span className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[var(--d-border-strong)] bg-white/[0.06] text-base font-semibold text-[var(--d-fg)] backdrop-blur-xl">
                       {step.index}
                     </span>
                     <div className="pt-1">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-lg font-extrabold tracking-tight">{step.title}</h3>
-                        <span className="rounded-full bg-[var(--d-surface)] px-3 py-1 text-xs font-bold text-[var(--d-muted)]">
+                        <h3 className="text-lg font-semibold tracking-tight">{step.title}</h3>
+                        <span className="rounded-md bg-white/[0.06] px-3 py-1 text-xs font-semibold text-[var(--d-muted)]">
                           {step.duration}
                         </span>
                       </div>
+
                       <p className="mt-2 max-w-md text-sm leading-6 text-[var(--d-muted)]">
                         {step.body}
                       </p>
@@ -271,22 +278,22 @@ export function HandoffLanding() {
         <div className="mx-auto max-w-6xl px-5">
           <Reveal className="max-w-2xl">
             <Eyebrow>{t.comparison.eyebrow}</Eyebrow>
-            <h2 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+            <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               {t.comparison.title}
             </h2>
             <p className="mt-4 text-base text-[var(--d-muted)]">{t.comparison.body}</p>
           </Reveal>
           <div className="mt-12 grid gap-5 lg:grid-cols-2">
             <Reveal>
-              <div className="h-full rounded-3xl border border-[var(--d-border)] bg-[var(--d-bg)] p-8">
-                <h3 className="text-xl font-extrabold tracking-tight text-[var(--d-muted)]">
+              <div className="glass-panel h-full rounded-2xl p-8">
+                <h3 className="text-xl font-semibold tracking-tight text-[var(--d-muted)]">
                   {t.comparison.leftTitle}
                 </h3>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {t.comparison.leftChips.map((c) => (
                     <span
                       key={c}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[var(--d-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--d-muted)]"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-[var(--d-muted)]"
                     >
                       <X className="h-3 w-3" /> {c}
                     </span>
@@ -296,8 +303,9 @@ export function HandoffLanding() {
               </div>
             </Reveal>
             <Reveal delay={0.08}>
-              <div className="h-full rounded-3xl border border-[var(--d-primary)]/15 bg-[var(--d-primary)] p-8 text-[var(--d-primary-fg)]">
-                <h3 className="text-xl font-extrabold tracking-tight">{t.comparison.rightTitle}</h3>
+              <div className="h-full rounded-2xl border border-[#5D7EEB]/40 bg-[#5D7EEB] p-8 text-white shadow-[0_18px_70px_rgba(93,126,235,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]">
+                <h3 className="text-xl font-semibold tracking-tight">{t.comparison.rightTitle}</h3>
+
                 <div className="mt-5 flex flex-wrap gap-2">
                   {t.comparison.rightChips.map((c) => (
                     <span
@@ -308,7 +316,7 @@ export function HandoffLanding() {
                     </span>
                   ))}
                 </div>
-                <p className="mt-6 text-sm leading-6 text-[var(--d-primary-fg)]/80">
+                <p className="mt-6 text-sm leading-6 text-white/80">
                   {t.comparison.rightBody}
                 </p>
               </div>
@@ -323,7 +331,7 @@ export function HandoffLanding() {
           <div className="flex justify-center">
             <Pill>{t.faq.eyebrow}</Pill>
           </div>
-          <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">{t.faq.title}</h2>
+          <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">{t.faq.title}</h2>
           <p className="mt-4 text-base text-[var(--d-muted)]">{t.faq.body}</p>
         </Reveal>
         <div className="mt-10 space-y-3">
@@ -331,7 +339,7 @@ export function HandoffLanding() {
             const open = openFaq === i;
             return (
               <Reveal key={item.q} delay={i * 0.03}>
-                <div className="overflow-hidden rounded-2xl border border-[var(--d-border)] bg-[var(--d-bg-2)]">
+                <div className="glass-panel overflow-hidden rounded-2xl">
                   <button
                     className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
                     onClick={() => setOpenFaq(open ? null : i)}
@@ -360,7 +368,7 @@ export function HandoffLanding() {
             <div className="flex justify-center">
               <Pill>{t.pricing.eyebrow}</Pill>
             </div>
-            <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
               {t.pricing.title}
             </h2>
             <p className="mt-4 text-base text-[var(--d-muted)]">{t.pricing.body}</p>
@@ -369,32 +377,32 @@ export function HandoffLanding() {
             {t.pricing.plans.map((plan, i) => (
               <Reveal key={plan.name} delay={i * 0.05}>
                 <div
-                  className={`flex h-full flex-col rounded-3xl border p-7 ${
+                  className={`flex h-full flex-col rounded-2xl p-7 ${
                     plan.popular
-                      ? "border-[var(--d-primary)] bg-[var(--d-primary)] text-[var(--d-primary-fg)]"
-                      : "border-[var(--d-border)] bg-[var(--d-bg)]"
+                      ? "border border-[#5D7EEB]/40 bg-[#5D7EEB] text-white shadow-[0_18px_70px_rgba(93,126,235,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]"
+                      : "glass-panel"
                   }`}
                 >
                   {plan.popular && (
-                    <span className="mb-3 inline-block w-fit rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
+                    <span className="mb-3 inline-block w-fit rounded-md bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
                       Most Popular
                     </span>
                   )}
-                  <h3 className="text-lg font-extrabold tracking-tight">{plan.name}</h3>
+                  <h3 className="text-lg font-semibold tracking-tight">{plan.name}</h3>
                   <p
                     className={`mt-1 text-sm ${
-                      plan.popular ? "text-[var(--d-primary-fg)]/75" : "text-[var(--d-muted)]"
+                      plan.popular ? "text-white/75" : "text-[var(--d-muted)]"
                     }`}
                   >
                     {plan.tagline}
                   </p>
                   {plan.price && (
-                    <p className="mt-6 text-3xl font-extrabold tracking-tight">{plan.price}</p>
+                    <p className="mt-6 text-3xl font-semibold tracking-tight">{plan.price}</p>
                   )}
                   {plan.credits && (
                     <p
                       className={`mt-1 text-xs font-semibold ${
-                        plan.popular ? "text-[var(--d-primary-fg)]/70" : "text-[var(--d-muted)]"
+                        plan.popular ? "text-white/70" : "text-[var(--d-muted)]"
                       }`}
                     >
                       {plan.credits} · {plan.perCredit}
@@ -403,16 +411,17 @@ export function HandoffLanding() {
                   <div className="mt-auto pt-7">
                     <button
                       onClick={handleStart}
-                      className={`w-full rounded-full px-5 py-3 text-sm font-bold transition ${
+                      className={`w-full rounded-lg px-5 py-3 text-sm font-semibold transition ${
                         plan.popular
-                          ? "bg-[var(--d-primary-fg)] text-[var(--d-primary)] hover:opacity-90"
-                          : "bg-[var(--d-primary)] text-[var(--d-primary-fg)] hover:-translate-y-0.5"
+                          ? "bg-white text-[#5D7EEB] hover:opacity-90"
+                          : "border border-[#5D7EEB]/40 bg-[#5D7EEB] text-white hover:-translate-y-0.5"
                       }`}
                     >
                       {plan.cta}
                     </button>
                   </div>
                 </div>
+
               </Reveal>
             ))}
           </div>
@@ -423,7 +432,7 @@ export function HandoffLanding() {
       <section className="mx-auto max-w-4xl px-5 py-24 text-center">
         <Reveal>
           <Eyebrow>{t.finalCta.eyebrow}</Eyebrow>
-          <h2 className="mt-4 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+          <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
             {t.finalCta.title}
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-base text-[var(--d-muted)]">{t.finalCta.body}</p>
@@ -434,12 +443,13 @@ export function HandoffLanding() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--d-border)] bg-[var(--d-bg-2)]">
+      <footer className="border-t border-[var(--d-border)] bg-white/[0.02] backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-5 py-14 text-center">
-          <p className="flex items-center gap-2 text-lg font-extrabold tracking-tight">
+          <p className="flex items-center gap-2 text-lg font-bold tracking-tight">
             <img src={handoffLogo} alt="HandOff logo" className="h-8 w-8 object-contain" />
             Hand<span className="text-[var(--d-muted)]">Off</span>
           </p>
+
           <p className="max-w-xs text-sm leading-6 text-[var(--d-muted)]">{t.footer.tagline}</p>
         </div>
         <div className="border-t border-[var(--d-border)] px-5 py-6 text-center text-xs text-[var(--d-muted)]">
