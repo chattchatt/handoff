@@ -250,16 +250,17 @@ export function HandoffLanding() {
               {t.timeline.steps.map((step, i) => (
                 <Reveal key={step.index} delay={i * 0.08}>
                   <div className="flex gap-5">
-                    <span className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[var(--d-border-strong)] bg-[var(--d-bg)] text-base font-extrabold text-[var(--d-fg)]">
+                    <span className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[var(--d-border-strong)] bg-white/[0.06] text-base font-semibold text-[var(--d-fg)] backdrop-blur-xl">
                       {step.index}
                     </span>
                     <div className="pt-1">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-lg font-extrabold tracking-tight">{step.title}</h3>
-                        <span className="rounded-full bg-[var(--d-surface)] px-3 py-1 text-xs font-bold text-[var(--d-muted)]">
+                        <h3 className="text-lg font-semibold tracking-tight">{step.title}</h3>
+                        <span className="rounded-md bg-white/[0.06] px-3 py-1 text-xs font-semibold text-[var(--d-muted)]">
                           {step.duration}
                         </span>
                       </div>
+
                       <p className="mt-2 max-w-md text-sm leading-6 text-[var(--d-muted)]">
                         {step.body}
                       </p>
