@@ -53,7 +53,7 @@ function messageForStatus(status: number): string {
  * against api.github.com so it runs cleanly on the Cloudflare Worker runtime.
  */
 export const publishGithubIssue = createServerFn({ method: "POST" })
-  .validator((data: unknown) => publishIssueInput.parse(data))
+  .inputValidator((data: unknown) => publishIssueInput.parse(data))
   .handler(async ({ data }): Promise<PublishIssueResult> => {
     const { owner, repo, token, title, body, labels } = data;
 
