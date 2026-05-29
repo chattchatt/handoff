@@ -35,7 +35,7 @@ export type Plan = {
 
 type Content = {
   nav: { process: string; services: string; pricing: string; faq: string };
-  cta: { start: string; explore: string; pricing: string; viewAllPlans: string };
+  cta: { start: string; github: string; explore: string; pricing: string; viewAllPlans: string };
   hero: {
     eyebrow: string;
     titleA: string;
