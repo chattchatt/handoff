@@ -1,20 +1,33 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import { getServerSession } from "./session.server";
 import type { HandoffResponse } from "./n8n";
 
+const ownerSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/, "invalid owner");
+const repoSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .regex(/^[A-Za-z0-9._-]+$/, "invalid repo");
+
 const publishIssueInput = z.object({
-  owner: z
-    .string()
-    .trim()
-    .min(1)
-    .regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/, "invalid owner"),
-  repo: z
-    .string()
-    .trim()
-    .min(1)
-    .regex(/^[A-Za-z0-9._-]+$/, "invalid repo"),
+  owner: ownerSchema,
+  repo: repoSchema,
   token: z.string().trim().min(1),
+  title: z.string().trim().min(1).max(256),
+  body: z.string().max(60000),
+  labels: z.array(z.string().trim().min(1)).optional(),
+});
+
+// Same shape minus the client-supplied token — the token comes from the session.
+const publishIssueAsUserInput = z.object({
+  owner: ownerSchema,
+  repo: repoSchema,
   title: z.string().trim().min(1).max(256),
   body: z.string().max(60000),
   labels: z.array(z.string().trim().min(1)).optional(),
@@ -46,58 +59,88 @@ function messageForStatus(status: number): string {
 }
 
 /**
+ * Shared issue-creation against api.github.com. `token` stays server-side: it is
+ * never persisted, never logged, and never returned (including error branches).
+ * Plain fetch so it runs cleanly on the Cloudflare Worker runtime.
+ */
+async function createIssue(
+  token: string,
+  owner: string,
+  repo: string,
+  title: string,
+  body: string,
+  labels?: string[],
+): Promise<PublishIssueResult> {
+  const payload: Record<string, unknown> = { title, body };
+  if (labels && labels.length > 0) payload.labels = labels;
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/issues`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+          "User-Agent": "handoff-issue-publisher",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+  } catch {
+    return {
+      ok: false,
+      errorMessage:
+        "GitHub에 연결하지 못했습니다. 네트워크 상태를 확인한 뒤 다시 시도하세요. (Could not reach GitHub — check your connection and retry.)",
+    };
+  }
+
+  if (!response.ok) {
+    return { ok: false, errorMessage: messageForStatus(response.status) };
+  }
+
+  const json = (await response.json().catch(() => null)) as {
+    html_url?: string;
+    number?: number;
+  } | null;
+
+  return { ok: true, issueUrl: json?.html_url, issueNumber: json?.number };
+}
+
+/**
  * Server function: create a GitHub issue using a per-publish PAT.
- *
- * The token is an argument only. It is never persisted, never logged, and
- * never returned in the response (including error branches). Uses plain fetch
- * against api.github.com so it runs cleanly on the Cloudflare Worker runtime.
+ * Used by anonymous (not-logged-in) visitors who paste a token. The token is an
+ * argument only and is never persisted, logged, or returned.
  */
 export const publishGithubIssue = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => publishIssueInput.parse(data))
   .handler(async ({ data }): Promise<PublishIssueResult> => {
     const { owner, repo, token, title, body, labels } = data;
+    return createIssue(token, owner, repo, title, body, labels);
+  });
 
-    const payload: Record<string, unknown> = { title, body };
-    if (labels && labels.length > 0) payload.labels = labels;
-
-    let response: Response;
-    try {
-      response = await fetch(
-        `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/issues`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "User-Agent": "handoff-issue-publisher",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        },
-      );
-    } catch {
+/**
+ * Server function: create a GitHub issue using the logged-in user's SESSION
+ * token. The token is read server-side from the signed session cookie (see
+ * session.server.ts) and is NEVER sent from the client — the client only passes
+ * the issue fields. Returns an auth error if there is no valid session.
+ */
+export const publishGithubIssueAsUser = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => publishIssueAsUserInput.parse(data))
+  .handler(async ({ data }): Promise<PublishIssueResult> => {
+    const session = await getServerSession();
+    if (!session) {
       return {
         ok: false,
         errorMessage:
-          "GitHub에 연결하지 못했습니다. 네트워크 상태를 확인한 뒤 다시 시도하세요. (Could not reach GitHub — check your connection and retry.)",
+          "로그인 세션을 찾을 수 없습니다. 다시 로그인한 뒤 시도하세요. (No active session — sign in again and retry.)",
       };
     }
-
-    if (!response.ok) {
-      return { ok: false, errorMessage: messageForStatus(response.status) };
-    }
-
-    const json = (await response.json().catch(() => null)) as {
-      html_url?: string;
-      number?: number;
-    } | null;
-
-    return {
-      ok: true,
-      issueUrl: json?.html_url,
-      issueNumber: json?.number,
-    };
+    const { owner, repo, title, body, labels } = data;
+    return createIssue(session.token, owner, repo, title, body, labels);
   });
 
 /**

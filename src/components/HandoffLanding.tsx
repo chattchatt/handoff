@@ -1,6 +1,8 @@
+import { Github } from "lucide-react";
 import { useState } from "react";
 import HandoffDemo from "@/components/HandoffDemo";
 import HeroMemoryScene from "@/components/HeroMemoryScene";
+import { useAuth } from "@/lib/use-auth";
 
 type Lang = "ko" | "en";
 
@@ -27,6 +29,8 @@ const copy = {
     copied: "복사됨",
     copiedCommands: "명령어 복사됨",
     openGithub: "GitHub 열기",
+    githubLogin: "GitHub 로그인",
+    logout: "로그아웃",
     demoCta: "실행 기억 만들기",
     previewCta: "예시 보기",
     workbenchCta: "Workbench",
@@ -77,6 +81,8 @@ const copy = {
     copied: "Copied",
     copiedCommands: "Commands copied",
     openGithub: "Open GitHub",
+    githubLogin: "Sign in with GitHub",
+    logout: "Sign out",
     demoCta: "Create memory",
     previewCta: "View example",
     workbenchCta: "Workbench",
@@ -392,23 +398,16 @@ function CliQuickstart({
 
 export function HandoffLanding() {
   const [lang, setLang] = useState<Lang>(getInitialLang);
-  const [repoCopied, setRepoCopied] = useState(false);
   const [commandsCopied, setCommandsCopied] = useState(false);
   const text = copy[lang];
   const nav = text.nav as Record<string, string>;
+  const auth = useAuth();
 
   function changeLang(nextLang: Lang) {
     setLang(nextLang);
     const url = new URL(window.location.href);
     url.searchParams.set("lang", nextLang);
     window.history.replaceState({}, "", url.toString());
-  }
-
-  async function copyRepoCommand() {
-    if (await writeClipboardText(CLONE_COMMAND)) {
-      setRepoCopied(true);
-      window.setTimeout(() => setRepoCopied(false), 1500);
-    }
   }
 
   async function copyAllCommands() {
@@ -467,13 +466,33 @@ export function HandoffLanding() {
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              className="hidden rounded-md border border-white/[0.35] bg-white/[0.88] px-4 py-2 text-sm font-bold text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-white sm:block"
-              onClick={copyRepoCommand}
-            >
-              {repoCopied ? (text.copied as string) : (text.copyRepo as string)}
-            </button>
+            {auth.loggedIn ? (
+              <button
+                type="button"
+                onClick={auth.logout}
+                disabled={auth.loggingOut}
+                title={`${auth.user?.login ?? ""} · ${text.logout as string}`.trim()}
+                aria-label={text.logout as string}
+                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border border-white/[0.18] bg-white/[0.06] text-white transition hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31] disabled:opacity-60"
+              >
+                {auth.user?.avatarUrl ? (
+                  <img src={auth.user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <Github className="h-4 w-4" />
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={auth.login}
+                title={text.githubLogin as string}
+                aria-label={text.githubLogin as string}
+                className="flex h-9 items-center gap-2 rounded-md border border-white/[0.18] bg-white/[0.06] px-2.5 text-sm font-semibold text-[#e8edf6] transition hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31] sm:px-3"
+              >
+                <Github className="h-4 w-4" />
+                <span className="hidden sm:inline">{text.githubLogin as string}</span>
+              </button>
+            )}
           </div>
         </div>
       </header>

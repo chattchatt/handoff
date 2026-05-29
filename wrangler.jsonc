@@ -4,4 +4,13 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  // ── GitHub OAuth secrets (HOFF-P3-05) ──
+  // Do NOT put secret values here. Bind them as Cloudflare Worker secrets:
+  //   bunx wrangler secret put GITHUB_CLIENT_ID
+  //   bunx wrangler secret put GITHUB_CLIENT_SECRET
+  //   bunx wrangler secret put SESSION_SECRET   # optional; falls back to GITHUB_CLIENT_SECRET
+  // For local dev, place the same names in .dev.vars (gitignored). src/server.ts
+  // reads them from the Worker env binding (with a process.env fallback).
+  // After deploy, set the OAuth App callback URL to:
+  //   https://<your-prod-domain>/api/auth/github/callback
 }

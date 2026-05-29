@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { callN8n, type HandoffRequest, type HandoffResponse } from "@/lib/n8n";
-import { buildIssueContent, publishGithubIssue } from "@/lib/github";
+import { buildIssueContent, publishGithubIssue, publishGithubIssueAsUser } from "@/lib/github";
+import { useAuth } from "@/lib/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 
 type WorkbenchView =
@@ -79,6 +80,10 @@ const navItemsByLang: Record<Lang, Array<{ id: WorkbenchView; label: string; eye
     { id: "history", label: "History", eyebrow: "Archive" },
   ],
 };
+
+// Nav views that require a logged-in GitHub session (tier-2). Anonymous visitors
+// see these locked with a "로그인 필요" hint.
+const TIER_TWO_VIEWS = new Set<WorkbenchView>(["history"]);
 
 const pipelineStepsByLang: Record<Lang, string[]> = {
   ko: [
@@ -273,6 +278,12 @@ const workbenchCopy = {
     publishRepoError: "대상 레포지토리를 owner/repo 형식으로 입력하세요.",
     publishMissingFields: "레포지토리, PAT, 제목을 모두 입력하세요.",
     publishUnknownError: "이슈 발행 중 알 수 없는 오류가 발생했습니다.",
+    authLogin: "GitHub로 로그인",
+    authLogout: "로그아웃",
+    authLoggingOut: "로그아웃 중...",
+    authLoginRequired: "로그인 필요",
+    authPublishLoggedIn: "로그인된 GitHub 계정으로 발행합니다. PAT를 붙여넣지 않아도 됩니다.",
+    publishMissingFieldsLoggedIn: "레포지토리와 제목을 입력하세요.",
   },
   en: {
     sidebarBody: "Turn work context into runnable state your next Agent Run can inherit.",
@@ -443,6 +454,12 @@ const workbenchCopy = {
     publishRepoError: "Enter the target repository as owner/repo.",
     publishMissingFields: "Enter the repository, PAT, and title.",
     publishUnknownError: "An unknown error occurred while publishing the issue.",
+    authLogin: "Sign in with GitHub",
+    authLogout: "Sign out",
+    authLoggingOut: "Signing out...",
+    authLoginRequired: "Login required",
+    authPublishLoggedIn: "Publishing as your signed-in GitHub account. No need to paste a PAT.",
+    publishMissingFieldsLoggedIn: "Enter the repository and title.",
   },
 } satisfies Record<Lang, Record<string, string>>;
 
@@ -900,16 +917,71 @@ function UpstagePipelineCard({
   );
 }
 
+function AuthControl({
+  auth,
+  t,
+}: {
+  auth: ReturnType<typeof useAuth>;
+  t: (typeof workbenchCopy)[Lang];
+}) {
+  if (auth.isLoading) return null;
+
+  if (!auth.loggedIn) {
+    return (
+      <div className="mt-6 border-t border-white/[0.08] pt-4">
+        <button
+          type="button"
+          onClick={auth.login}
+          className="flex w-full items-center justify-center gap-2 rounded-md border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.16] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#5D7EEB]/[0.28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70"
+        >
+          {t.authLogin}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 flex items-center gap-3 border-t border-white/[0.08] pt-4">
+      {auth.user?.avatarUrl ? (
+        <img
+          src={auth.user.avatarUrl}
+          alt={auth.user.login}
+          className="h-8 w-8 rounded-full border border-white/[0.12]"
+        />
+      ) : (
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-white/[0.1] text-xs font-semibold text-white">
+          {auth.user?.login?.slice(0, 1).toUpperCase() ?? "?"}
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-[#e8edf6]">
+          {auth.user?.name || auth.user?.login}
+        </p>
+        <button
+          type="button"
+          onClick={auth.logout}
+          disabled={auth.loggingOut}
+          className="text-xs font-semibold text-[#9db4ff] underline-offset-2 hover:underline disabled:opacity-50"
+        >
+          {auth.loggingOut ? t.authLoggingOut : t.authLogout}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function GitHubPublishCard({
   result,
   meetingTitle,
   lang,
   t,
+  loggedIn,
 }: {
   result: HandoffResponse;
   meetingTitle: string;
   lang: Lang;
   t: (typeof workbenchCopy)[Lang];
+  loggedIn: boolean;
 }) {
   const prefill = useMemo(
     () => buildIssueContent(result, meetingTitle, lang),
@@ -917,6 +989,7 @@ function GitHubPublishCard({
   );
   const [repo, setRepo] = useState("");
   // PAT lives in local component state only — never persisted or logged.
+  // Only used in the anonymous (not-logged-in) flow.
   const [token, setToken] = useState("");
   const [labels, setLabels] = useState("");
   const [title, setTitle] = useState(prefill.title);
@@ -935,9 +1008,12 @@ function GitHubPublishCard({
       toast.error(t.publishRepoError);
       return;
     }
-    if (!token.trim() || !title.trim()) {
-      setErrorMessage(t.publishMissingFields);
-      toast.error(t.publishMissingFields);
+    // Logged-in users publish with their session token (server-side) and do not
+    // paste a PAT; anonymous users must paste one.
+    if (!title.trim() || (!loggedIn && !token.trim())) {
+      const message = loggedIn ? t.publishMissingFieldsLoggedIn : t.publishMissingFields;
+      setErrorMessage(message);
+      toast.error(message);
       return;
     }
 
@@ -948,16 +1024,28 @@ function GitHubPublishCard({
 
     setPublishing(true);
     try {
-      const res = await publishGithubIssue({
-        data: {
-          owner: match[1],
-          repo: match[2],
-          token: token.trim(),
-          title: title.trim(),
-          body,
-          labels: parsedLabels.length > 0 ? parsedLabels : undefined,
-        },
-      });
+      // When logged in, the session GitHub token is read server-side from the
+      // signed session cookie — never sent from the client.
+      const res = loggedIn
+        ? await publishGithubIssueAsUser({
+            data: {
+              owner: match[1],
+              repo: match[2],
+              title: title.trim(),
+              body,
+              labels: parsedLabels.length > 0 ? parsedLabels : undefined,
+            },
+          })
+        : await publishGithubIssue({
+            data: {
+              owner: match[1],
+              repo: match[2],
+              token: token.trim(),
+              title: title.trim(),
+              body,
+              labels: parsedLabels.length > 0 ? parsedLabels : undefined,
+            },
+          });
       if (res.ok && res.issueUrl) {
         setIssueUrl(res.issueUrl);
         toast.success(t.publishSuccess);
@@ -983,9 +1071,11 @@ function GitHubPublishCard({
           {t.publishEyebrow}
         </p>
         <h3 className="mt-1 text-xl font-bold text-[#f6f4ee]">{t.publishTitle}</h3>
-        <p className="mt-2 text-sm leading-6 text-[#c7cfdd]">{t.publishSummary}</p>
+        <p className="mt-2 text-sm leading-6 text-[#c7cfdd]">
+          {loggedIn ? t.authPublishLoggedIn : t.publishSummary}
+        </p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className={`grid gap-4 ${loggedIn ? "" : "md:grid-cols-2"}`}>
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-[#a8b2c4]">{t.publishRepoLabel}</span>
           <input
@@ -997,18 +1087,21 @@ function GitHubPublishCard({
             onChange={(event) => setRepo(event.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-[#a8b2c4]">{t.publishTokenLabel}</span>
-          <input
-            className={fieldClass}
-            type="password"
-            autoComplete="off"
-            placeholder={t.publishTokenPlaceholder}
-            value={token}
-            onChange={(event) => setToken(event.target.value)}
-          />
-          <span className="text-[11px] leading-4 text-[#7d8798]">{t.publishTokenHint}</span>
-        </label>
+        {/* PAT field only for anonymous users; logged-in users publish with their session token. */}
+        {!loggedIn && (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-[#a8b2c4]">{t.publishTokenLabel}</span>
+            <input
+              className={fieldClass}
+              type="password"
+              autoComplete="off"
+              placeholder={t.publishTokenPlaceholder}
+              value={token}
+              onChange={(event) => setToken(event.target.value)}
+            />
+            <span className="text-[11px] leading-4 text-[#7d8798]">{t.publishTokenHint}</span>
+          </label>
+        )}
       </div>
       <label className="mt-4 flex flex-col gap-1.5">
         <span className="text-xs font-medium text-[#a8b2c4]">{t.publishIssueTitleLabel}</span>
@@ -1324,6 +1417,7 @@ export function HandoffDemo({
   const [error, setError] = useState<string | null>(null);
   const [rawResult, setRawResult] = useState<unknown>(null);
   const t = workbenchCopy[lang];
+  const auth = useAuth();
   const deliveryOptions = deliveryOptionsByLang[lang];
   const navItems = navItemsByLang[lang];
   const pipelineSteps = pipelineStepsByLang[lang];
@@ -1601,10 +1695,15 @@ export function HandoffDemo({
           </div>
           <nav className="grid gap-1">
             {navItems.map((item) => {
+              // Tier-2 nav items require a logged-in GitHub session. Today only
+              // "history" is gated; anonymous visitors see it locked with a hint.
+              const tierTwo = TIER_TWO_VIEWS.has(item.id);
+              const lockedByTier = tierTwo && !auth.loggedIn;
               const disabled =
-                !result &&
-                item.id !== "input" &&
-                !(item.id === "history" && historyItems.length > 0);
+                lockedByTier ||
+                (!result &&
+                  item.id !== "input" &&
+                  !(item.id === "history" && historyItems.length > 0));
               const selected = activeView === item.id;
               return (
                 <button
@@ -1613,12 +1712,20 @@ export function HandoffDemo({
                   disabled={disabled}
                   onClick={() => setActiveView(item.id)}
                 >
-                  <span className="block text-sm font-medium">{item.label}</span>
+                  <span className="flex items-center gap-1.5 text-sm font-medium">
+                    {item.label}
+                    {lockedByTier && (
+                      <span className="rounded-sm bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-normal text-[#9aa4b6]">
+                        {t.authLoginRequired}
+                      </span>
+                    )}
+                  </span>
                   <span className="block text-xs text-[#7d8798]">{item.eyebrow}</span>
                 </button>
               );
             })}
           </nav>
+          <AuthControl auth={auth} t={t} />
         </aside>
         <section className="min-w-0 p-5 sm:p-8">
           <header className="mb-6 flex flex-col justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.035] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl xl:flex-row xl:items-end">
@@ -2074,7 +2181,13 @@ export function HandoffDemo({
           <UpstagePipelineCard pipeline={result.pipeline} t={t} />
         </div>
         <div className="xl:col-span-2">
-          <GitHubPublishCard result={result} meetingTitle={meetingTitle} lang={lang} t={t} />
+          <GitHubPublishCard
+            result={result}
+            meetingTitle={meetingTitle}
+            lang={lang}
+            t={t}
+            loggedIn={auth.loggedIn}
+          />
         </div>
       </div>
     </>
