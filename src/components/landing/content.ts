@@ -269,11 +269,7 @@ export const copy: Record<Lang, Content> = {
     footer: {
       tagline: "회의록·PDF·흩어진 메모를 사람과 AI가 함께 일하는 작업으로. 그냥 넘기세요.",
       rights: "© 2026 HandOff. All rights reserved.",
-      cols: [
-        { title: "제품", links: ["작동 방식", "기능", "요금제", "FAQ"] },
-        { title: "회사", links: ["소개", "블로그", "문의"] },
-        { title: "법적 고지", links: ["이용약관", "개인정보처리방침", "보안"] },
-      ],
+      cols: [],
     },
   },
   en: {
@@ -468,11 +464,7 @@ export const copy: Record<Lang, Content> = {
     footer: {
       tagline: "Meeting notes, PDFs, scattered memos — into work people and AI do together. Just hand it off.",
       rights: "© 2026 HandOff. All rights reserved.",
-      cols: [
-        { title: "Product", links: ["How it works", "Features", "Pricing", "FAQ"] },
-        { title: "Company", links: ["About", "Blog", "Contact"] },
-        { title: "Legal", links: ["Terms", "Privacy", "Security"] },
-      ],
+      cols: [],
     },
   },
 };
