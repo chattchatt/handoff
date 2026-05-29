@@ -1,8 +1,15 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { callN8n, type HandoffRequest, type HandoffResponse } from "@/lib/n8n";
 import { buildIssueContent, publishGithubIssue, publishGithubIssueAsUser } from "@/lib/github";
 import { useAuth } from "@/lib/use-auth";
+import {
+  deleteServerHistory,
+  fetchServerHistory,
+  fetchServerHistoryItem,
+  migrateServerHistory,
+  saveServerHistory,
+} from "@/lib/history-api";
 import { Toaster } from "@/components/ui/sonner";
 
 type WorkbenchView =
@@ -26,8 +33,13 @@ type HistoryItem = {
   meetingTitle?: string;
   recipient?: string;
   transcript?: string;
+  /** Server-backed (Postgres) item: full response is fetched on reopen. */
+  isServer?: boolean;
 };
 const HISTORY_KEY = "handoff.executionHistory.v2";
+// Set once after the logged-in user's localStorage history is migrated to the
+// server, so we never re-POST /api/history/migrate on subsequent logins.
+const HISTORY_MIGRATED_KEY = "handoff.executionHistory.migrated.v1";
 type Lang = "ko" | "en";
 
 const deliveryOptionsByLang: Record<
@@ -1426,9 +1438,65 @@ export function HandoffDemo({
   const result = useMemo(() => (rawResult ? normalizeResponse(rawResult) : null), [rawResult]);
   const deliveryLabel = getDeliveryLabel(lang, deliveryType);
 
+  // Anonymous: load this browser's localStorage history. Logged in: ignore
+  // localStorage and load the server-backed history instead (set below).
   useEffect(() => {
-    setHistoryItems(readHistory());
-  }, []);
+    if (auth.isLoading) return;
+    if (!auth.loggedIn) {
+      setHistoryItems(readHistory());
+    }
+  }, [auth.isLoading, auth.loggedIn]);
+
+  // On login: one-time migrate any local items to the server (guarded by a
+  // localStorage flag), then load the server history into the History view.
+  const migrationRanRef = useRef(false);
+  useEffect(() => {
+    if (auth.isLoading || !auth.loggedIn) return;
+    let cancelled = false;
+
+    async function syncServerHistory() {
+      try {
+        if (!migrationRanRef.current && typeof window !== "undefined") {
+          migrationRanRef.current = true;
+          const alreadyMigrated = window.localStorage.getItem(HISTORY_MIGRATED_KEY) === "1";
+          const local = readHistory().filter((item) => item.response);
+          if (!alreadyMigrated && local.length > 0) {
+            await migrateServerHistory(
+              local.map((item) => ({
+                title: item.title,
+                request: { meetingTitle: item.meetingTitle, transcript: item.transcript },
+                response: item.response as HandoffResponse,
+                createdAt: item.createdAt,
+              })),
+            );
+          }
+          window.localStorage.setItem(HISTORY_MIGRATED_KEY, "1");
+        }
+
+        const serverItems = await fetchServerHistory();
+        if (cancelled) return;
+        setHistoryItems(
+          serverItems.map((item) => ({
+            id: item.id,
+            title: item.title || "",
+            createdAt: item.createdAt,
+            inputType: "",
+            deliveryLabel: "",
+            summary: "",
+            isServer: true,
+          })),
+        );
+      } catch {
+        // History is best-effort; if the server/DB is unavailable, leave the
+        // current items as-is rather than breaking the app.
+      }
+    }
+
+    void syncServerHistory();
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.isLoading, auth.loggedIn]);
 
   const canSubmit =
     meetingTitle.trim().length > 0 && (transcript.trim().length > 0 || selectedFile !== null);
@@ -1479,23 +1547,43 @@ export function HandoffDemo({
         setActiveView("error");
         return;
       }
-      const nextHistory = [
-        {
-          id: `${Date.now()}`,
-          title: request.meetingTitle || normalized.deliverablePack.title,
-          createdAt: new Date().toISOString(),
-          inputType: classifyInputType(request.transcript),
-          deliveryLabel: getDeliveryLabel(lang, request.deliveryType),
-          summary: normalized.meetingUnderstanding.goal || normalized.deliverablePack.brief,
-          response: normalized,
-          meetingTitle: request.meetingTitle,
-          recipient: request.recipient,
-          transcript: request.transcript,
-        },
-        ...historyItems,
-      ].slice(0, 12);
-      setHistoryItems(nextHistory);
-      saveHistory(nextHistory);
+      const runTitle = request.meetingTitle || normalized.deliverablePack.title;
+      const runSummary = normalized.meetingUnderstanding.goal || normalized.deliverablePack.brief;
+      const newItem: HistoryItem = {
+        id: `${Date.now()}`,
+        title: runTitle,
+        createdAt: new Date().toISOString(),
+        inputType: classifyInputType(request.transcript),
+        deliveryLabel: getDeliveryLabel(lang, request.deliveryType),
+        summary: runSummary,
+        response: normalized,
+        meetingTitle: request.meetingTitle,
+        recipient: request.recipient,
+        transcript: request.transcript,
+      };
+      if (auth.loggedIn) {
+        // Persist server-side; prepend optimistically so the History view reflects it.
+        try {
+          const { id } = await saveServerHistory({
+            title: runTitle,
+            request: {
+              meetingTitle: request.meetingTitle,
+              transcript: request.transcript,
+              deliveryType: request.deliveryType,
+              recipient: request.recipient,
+            },
+            response: normalized,
+            sourceType: classifyInputType(request.transcript),
+          });
+          setHistoryItems((prev) => [{ ...newItem, id, isServer: true }, ...prev].slice(0, 50));
+        } catch {
+          // Saving history is best-effort and never blocks showing the result.
+        }
+      } else {
+        const nextHistory = [newItem, ...historyItems].slice(0, 12);
+        setHistoryItems(nextHistory);
+        saveHistory(nextHistory);
+      }
       setActiveView("dashboard");
     } catch (err) {
       // The multipart upload path failed. If a file is attached and we haven't already
@@ -1633,9 +1721,8 @@ export function HandoffDemo({
     setActiveView("input");
   }
 
-  function handleOpenHistory(item: HistoryItem) {
-    if (!item.response) return;
-    setRawResult(item.response);
+  function openWithResponse(item: HistoryItem, response: HandoffResponse) {
+    setRawResult(response);
     setMeetingTitle(item.meetingTitle || item.title || "");
     setRecipient(item.recipient || "");
     setTranscript(item.transcript || "");
@@ -1647,15 +1734,45 @@ export function HandoffDemo({
     setActiveView("dashboard");
   }
 
-  function handleDeleteHistory(id: string) {
-    const next = historyItems.filter((item) => item.id !== id);
-    setHistoryItems(next);
-    saveHistory(next);
+  async function handleOpenHistory(item: HistoryItem) {
+    if (item.response) {
+      openWithResponse(item, item.response);
+      return;
+    }
+    // Server item: the full response is fetched on demand (the list endpoint
+    // returns only id/title/createdAt).
+    if (item.isServer) {
+      try {
+        const detail = await fetchServerHistoryItem(item.id);
+        openWithResponse(item, detail.response);
+      } catch {
+        toast.error(t.unknownError);
+      }
+    }
   }
 
-  function handleClearHistory() {
+  async function handleDeleteHistory(id: string) {
+    const next = historyItems.filter((item) => item.id !== id);
+    setHistoryItems(next);
+    if (auth.loggedIn) {
+      try {
+        await deleteServerHistory(id);
+      } catch {
+        // Best-effort; the optimistic removal already updated the view.
+      }
+    } else {
+      saveHistory(next);
+    }
+  }
+
+  async function handleClearHistory() {
+    const items = historyItems;
     setHistoryItems([]);
-    saveHistory([]);
+    if (auth.loggedIn) {
+      await Promise.allSettled(items.map((item) => deleteServerHistory(item.id)));
+    } else {
+      saveHistory([]);
+    }
   }
 
   async function handleWebhookTest() {
@@ -1860,11 +1977,13 @@ export function HandoffDemo({
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <h3 className="text-sm font-semibold text-[#f6f4ee]">{item.title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-[#a8b2c4]">{item.summary}</p>
+                  {item.summary && (
+                    <p className="mt-1 text-sm leading-6 text-[#a8b2c4]">{item.summary}</p>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs text-[#9aa3b5]">
-                  <StatusBadge>{item.inputType}</StatusBadge>
-                  <StatusBadge>{item.deliveryLabel}</StatusBadge>
+                  {item.inputType && <StatusBadge>{item.inputType}</StatusBadge>}
+                  {item.deliveryLabel && <StatusBadge>{item.deliveryLabel}</StatusBadge>}
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
@@ -1875,7 +1994,7 @@ export function HandoffDemo({
                   <button
                     type="button"
                     onClick={() => handleOpenHistory(item)}
-                    disabled={!item.response}
+                    disabled={!item.response && !item.isServer}
                     className="rounded-md border border-[#5D7EEB]/[0.45] bg-[#5D7EEB]/[0.14] px-3 py-1 text-xs font-semibold text-white transition hover:bg-[#5D7EEB]/[0.24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {t.historyReopen}

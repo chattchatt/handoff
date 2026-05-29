@@ -16,6 +16,21 @@ import {
 } from "./lib/auth";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import {
+  deleteHistory,
+  getHistoryItem,
+  listHistory,
+  migrateHistory,
+  saveHistory,
+  upsertUser,
+} from "./lib/history.server";
+
+type SessionUser = {
+  githubId: number;
+  login: string;
+  name: string | null;
+  avatarUrl: string | null;
+};
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -184,6 +199,22 @@ async function handleAuth(
       return new Response(null, { status: 302, headers });
     }
 
+    // Best-effort: ensure a users row exists for this account. Must NOT block
+    // login if the DB is down or DATABASE_URL is unset — log and continue.
+    try {
+      await upsertUser({
+        githubId: session.githubId,
+        login: session.login,
+        name: session.name,
+        avatarUrl: session.avatarUrl,
+      });
+    } catch (error) {
+      console.warn(
+        "user upsert on login failed (continuing):",
+        error instanceof Error ? error.message : error,
+      );
+    }
+
     const signed = await signSession(session, authEnv);
     const headers = new Headers({ Location: "/app" });
     headers.append("Set-Cookie", cookie(SESSION_COOKIE, signed, SESSION_MAX_AGE));
@@ -213,6 +244,101 @@ async function handleAuth(
   return undefined;
 }
 
+function sessionUser(session: {
+  githubId: number;
+  login: string;
+  name: string | null;
+  avatarUrl: string | null;
+}): SessionUser {
+  return {
+    githubId: session.githubId,
+    login: session.login,
+    name: session.name,
+    avatarUrl: session.avatarUrl,
+  };
+}
+
+async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
+  try {
+    const body = await request.json();
+    return body && typeof body === "object" && !Array.isArray(body)
+      ? (body as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Per-account history API (HOFF-P3-06 #33 + HOFF-P3-07 #34) ──
+// Intercepted here (like the auth routes) before SSR. Every route requires a
+// logged-in session — the user is read from the same signed session cookie used
+// by /api/auth/me. All DB access is server-only (history.server.ts → postgres).
+async function handleHistory(
+  request: Request,
+  url: URL,
+  authEnv: AuthEnv,
+): Promise<Response | undefined> {
+  const path = url.pathname;
+  if (path !== "/api/history" && !path.startsWith("/api/history/")) return undefined;
+
+  const session = await readSession(readCookie(request, SESSION_COOKIE), authEnv);
+  if (!session) return jsonResponse({ error: "unauthorized" }, 401);
+  const user = sessionUser(session);
+
+  // /api/history/migrate — bulk-insert localStorage history once.
+  if (path === "/api/history/migrate" && request.method === "POST") {
+    const body = await readJsonBody(request);
+    const rawItems = Array.isArray(body?.items) ? (body.items as unknown[]) : [];
+    const items = rawItems
+      .filter((it): it is Record<string, unknown> => Boolean(it) && typeof it === "object")
+      .map((it) => ({
+        title: typeof it.title === "string" ? it.title : null,
+        request: it.request ?? null,
+        response: it.response ?? null,
+        createdAt: typeof it.createdAt === "string" ? it.createdAt : undefined,
+      }));
+    const migrated = await migrateHistory(user, items);
+    return jsonResponse({ migrated });
+  }
+
+  // /api/history/:id — single-item read or delete.
+  const idMatch = path.match(/^\/api\/history\/([^/]+)$/);
+  if (idMatch) {
+    const id = decodeURIComponent(idMatch[1]);
+    if (request.method === "GET") {
+      const item = await getHistoryItem(user, id);
+      if (!item) return jsonResponse({ error: "not_found" }, 404);
+      return jsonResponse(item);
+    }
+    if (request.method === "DELETE") {
+      const deleted = await deleteHistory(user, id);
+      if (!deleted) return jsonResponse({ error: "not_found" }, 404);
+      return jsonResponse({ deleted: true });
+    }
+    return undefined;
+  }
+
+  // /api/history — list or save.
+  if (path === "/api/history") {
+    if (request.method === "GET") {
+      return jsonResponse(await listHistory(user));
+    }
+    if (request.method === "POST") {
+      const body = await readJsonBody(request);
+      if (!body) return jsonResponse({ error: "bad_request" }, 400);
+      const id = await saveHistory(user, {
+        title: typeof body.title === "string" ? body.title : null,
+        request: body.request ?? null,
+        response: body.response ?? null,
+        sourceType: typeof body.sourceType === "string" ? body.sourceType : null,
+      });
+      return jsonResponse({ id });
+    }
+  }
+
+  return undefined;
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
@@ -221,6 +347,17 @@ export default {
       if (url.pathname.startsWith("/api/auth/")) {
         const authResponse = await handleAuth(request, url, authEnv);
         if (authResponse) return authResponse;
+      }
+      if (url.pathname === "/api/history" || url.pathname.startsWith("/api/history/")) {
+        try {
+          const historyResponse = await handleHistory(request, url, authEnv);
+          if (historyResponse) return historyResponse;
+        } catch (error) {
+          // DB unreachable / DATABASE_URL unset — degrade history without
+          // crashing the server. Never log the connection string.
+          console.warn("history request failed:", error instanceof Error ? error.message : error);
+          return jsonResponse({ error: "history_unavailable" }, 503);
+        }
       }
 
       const handler = await getServerEntry();

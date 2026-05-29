@@ -46,6 +46,8 @@ export type AuthEnv = {
 export type SessionPayload = {
   /** GitHub access token — server-side only, never sent to the client. */
   token: string;
+  /** Stable GitHub numeric user id — the key for per-account history. */
+  githubId: number;
   login: string;
   name: string | null;
   avatarUrl: string | null;
@@ -64,6 +66,7 @@ const githubCallbackParams = z.object({
 });
 
 const githubUser = z.object({
+  id: z.number(),
   login: z.string(),
   name: z.string().nullable().optional(),
   avatar_url: z.string().nullable().optional(),
@@ -145,10 +148,12 @@ export async function readSession(
       parsed &&
       typeof parsed === "object" &&
       typeof parsed.token === "string" &&
+      typeof parsed.githubId === "number" &&
       typeof parsed.login === "string"
     ) {
       return {
         token: parsed.token,
+        githubId: parsed.githubId,
         login: parsed.login,
         name: typeof parsed.name === "string" ? parsed.name : null,
         avatarUrl: typeof parsed.avatarUrl === "string" ? parsed.avatarUrl : null,
@@ -232,6 +237,7 @@ export async function exchangeCodeForSession(
 
   return {
     token,
+    githubId: userParsed.data.id,
     login: userParsed.data.login,
     name: userParsed.data.name ?? null,
     avatarUrl: userParsed.data.avatar_url ?? null,

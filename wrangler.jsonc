@@ -1,3 +1,6 @@
+// LEGACY / UNUSED — hosting migrated from Cloudflare Workers to a Node server on Railway.
+// Kept (not deleted) to avoid breaking anything mid-migration; the build no longer reads this
+// (vite.config.ts sets cloudflare: false). Deploy config is now railway.json + RAILWAY.md.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tanstack-start-app",

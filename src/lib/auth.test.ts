@@ -14,6 +14,7 @@ const env: AuthEnv = { SESSION_SECRET: "test-secret-key-which-is-long-enough" };
 
 const session: SessionPayload = {
   token: "gho_thisIsASecretTokenValue",
+  githubId: 583231,
   login: "octocat",
   name: "The Octocat",
   avatarUrl: "https://avatars.example/octocat.png",
