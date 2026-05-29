@@ -428,12 +428,12 @@ export function HandoffLanding() {
         </div>
       </section>
 
-      <section id="how" className="relative z-10 mx-auto max-w-7xl px-5 pb-28 pt-16">
+      <SectionConnector />
+
+      <section id="how" className="relative z-10 mx-auto max-w-7xl scroll-mt-24 px-5 pb-28 pt-6">
         <div className="grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:items-start">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
-              {text.howEyebrow as string}
-            </p>
+            <SectionEyebrow index="03" label={text.howEyebrow as string} />
             <h2 className="mt-3 text-2xl font-semibold md:text-3xl">{text.howTitle as string}</h2>
             <p className="mt-4 text-sm leading-6 text-[#a8b2c4] md:text-base">
               {text.howBody as string}
