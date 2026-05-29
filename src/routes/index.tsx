@@ -5,16 +5,16 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "HandOff — Agent Handoff Workbench" },
+      { title: "HandOff — 그냥 넘기세요" },
       {
         name: "description",
         content:
-          "흩어진 업무 맥락을 목표·결정·후속 작업·근거로 정리해, 다음 사람이나 AI 에이전트가 그대로 이어받는 실행 기억으로 바꿉니다.",
+          "회의록·PDF·흩어진 메모를 다시 정리하지 마세요. 그냥 넘기면 사람과 AI 에이전트로 이뤄진 당신의 팀이 이어받아 일합니다.",
       },
-      { property: "og:title", content: "HandOff — Agent Handoff Workbench" },
+      { property: "og:title", content: "HandOff — 그냥 넘기세요" },
       {
         property: "og:description",
-        content: "흩어진 업무 맥락을 다음 사람·AI가 그대로 이어받는 실행 기억으로 바꾸세요.",
+        content: "넘기는 순간, 사람과 AI 에이전트가 실행 가능한 작업으로 이어받습니다.",
       },
       { property: "og:url", content: "https://view-capture-match.lovable.app/" },
     ],
