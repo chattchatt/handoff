@@ -432,7 +432,7 @@ export function HandoffLanding() {
       <section className="mx-auto max-w-4xl px-5 py-24 text-center">
         <Reveal>
           <Eyebrow>{t.finalCta.eyebrow}</Eyebrow>
-          <h2 className="mt-4 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+          <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
             {t.finalCta.title}
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-base text-[var(--d-muted)]">{t.finalCta.body}</p>
