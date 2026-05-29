@@ -90,13 +90,13 @@ export const copy: Record<Lang, Content> = {
       titleA: "반복 업무는 ",
       titleAccent: "AI",
       titleB: "에게,\n성장은 당신에게.",
-      body: "업무 자동화를 전문가가 대행합니다. 워크플로우 분석부터 맞춤 자동화 구축, 운영까지. daval.cloud가 비즈니스 자동화를 처음부터 끝까지 대행합니다.",
+      body: "업무 자동화를 전문가가 대행합니다. 워크플로우 분석부터 맞춤 자동화 구축, 운영까지. HandOff가 비즈니스 자동화를 처음부터 끝까지 대행합니다.",
     },
     process: {
       pill: "PROCESS",
       titleA: "아이디어에서 결과까지,",
       titleFaded: "네 번의 터치.",
-      body: "실제 화면으로 보는 daval.cloud의 협업 방식.",
+      body: "실제 화면으로 보는 HandOff의 협업 방식.",
       rows: [
         {
           index: "01",
@@ -174,19 +174,19 @@ export const copy: Record<Lang, Content> = {
           index: "03",
           title: "납품 & 운영",
           duration: "자동화",
-          body: "완성된 자동화는 암호화된 .daval 파일로 납품됩니다. 대시보드에서 실행 현황, 성공률, ROI를 실시간으로 확인하고 관리하세요.",
+          body: "완성된 자동화는 암호화된 .handoff 파일로 납품됩니다. 대시보드에서 실행 현황, 성공률, ROI를 실시간으로 확인하고 관리하세요.",
         },
       ],
     },
     comparison: {
-      eyebrow: "WHY DAVAL.CLOUD",
+      eyebrow: "WHY HANDOFF",
       title: "직접 만드는 것과 비교해 보세요.",
-      body: "개발자 채용부터 서버 관리까지 — 자동화를 직접 구축하는 것과 daval.cloud에 맡기는 것의 차이를 확인하세요.",
+      body: "개발자 채용부터 서버 관리까지 — 자동화를 직접 구축하는 것과 HandOff에 맡기는 것의 차이를 확인하세요.",
       leftTitle: "직접 자동화 구축",
       leftChips: ["개발자 필요", "높은 초기 비용", "긴 개발 기간", "유지보수 부담"],
       leftBody:
         "개발자 채용, n8n/Zapier 학습, 서버 관리, 보안 설정… 자동화 하나를 만드는 데 수개월이 걸립니다.",
-      rightTitle: "daval.cloud에 맡기기",
+      rightTitle: "HandOff에 맡기기",
       rightChips: ["전문가 대행", "크레딧 요금제", "빠른 납품", "AES-256 보안"],
       rightBody:
         "요청만 제출하면 분석부터 구축까지 전문가가 모두 처리합니다. 크레딧 기반으로 사용한 만큼만 지불하세요.",
@@ -194,19 +194,19 @@ export const copy: Record<Lang, Content> = {
     faq: {
       eyebrow: "FAQ",
       title: "자주 묻는 질문.",
-      body: "daval.cloud에 대해 알아야 할 모든 것.",
+      body: "HandOff에 대해 알아야 할 모든 것.",
       items: [
         {
-          q: "daval.cloud란 무엇인가요?",
-          a: "daval.cloud는 AI 자동화 전문 대행 서비스입니다. 워크플로우 분석부터 맞춤 자동화 구축, 운영, 최적화까지 전문가가 전 과정을 대행합니다.",
+          q: "HandOff란 무엇인가요?",
+          a: "HandOff는 AI 자동화 전문 대행 서비스입니다. 워크플로우 분석부터 맞춤 자동화 구축, 운영, 최적화까지 전문가가 전 과정을 대행합니다.",
         },
         {
           q: "크레딧은 어떻게 작동하나요?",
           a: "크레딧은 자동화 실행에 사용되는 사용량 기반 단위입니다. 미리 충전해 두고 자동화가 실행될 때마다 차감되며, 서버 비용이나 유지보수 비용은 별도로 들지 않습니다.",
         },
         {
-          q: ".daval 파일이란 무엇인가요?",
-          a: "완성된 자동화는 AES-256-GCM으로 암호화된 .daval 파일로 납품됩니다. 워크플로우가 안전하게 보호되며 대시보드를 통해 바로 실행할 수 있습니다.",
+          q: ".handoff 파일이란 무엇인가요?",
+          a: "완성된 자동화는 AES-256-GCM으로 암호화된 .handoff 파일로 납품됩니다. 워크플로우가 안전하게 보호되며 대시보드를 통해 바로 실행할 수 있습니다.",
         },
         {
           q: "요청부터 납품까지 얼마나 걸리나요?",
@@ -266,8 +266,8 @@ export const copy: Record<Lang, Content> = {
       body: "무료로 가입하고 첫 자동화 요청을 제출하세요. 신용카드가 필요 없습니다.",
     },
     footer: {
-      tagline: "AI 자동화를 처음부터 끝까지 대행하는 daval.cloud.",
-      rights: "© 2026 daval.cloud. All rights reserved.",
+      tagline: "AI 자동화를 처음부터 끝까지 대행하는 HandOff.",
+      rights: "© 2026 HandOff. All rights reserved.",
       cols: [
         { title: "제품", links: ["프로세스", "서비스", "요금제", "FAQ"] },
         { title: "회사", links: ["소개", "블로그", "채용", "문의"] },
@@ -288,13 +288,13 @@ export const copy: Record<Lang, Content> = {
       titleA: "Let ",
       titleAccent: "AI",
       titleB: " handle the routine.\nYou focus on growth.",
-      body: "Our experts handle your business automation end-to-end. From workflow analysis to custom automation building and operations — daval.cloud delivers results without the technical burden.",
+      body: "Our experts handle your business automation end-to-end. From workflow analysis to custom automation building and operations — HandOff delivers results without the technical burden.",
     },
     process: {
       pill: "PROCESS",
       titleA: "From idea to outcome,",
       titleFaded: "in four touches.",
-      body: "How we collaborate on daval.cloud, shown on real screens.",
+      body: "How we collaborate on HandOff, shown on real screens.",
       rows: [
         {
           index: "01",
@@ -372,19 +372,19 @@ export const copy: Record<Lang, Content> = {
           index: "03",
           title: "Delivery & Operations",
           duration: "Automated",
-          body: "Completed automations are delivered as encrypted .daval files. Monitor execution status, success rates, and ROI in real-time from your dashboard.",
+          body: "Completed automations are delivered as encrypted .handoff files. Monitor execution status, success rates, and ROI in real-time from your dashboard.",
         },
       ],
     },
     comparison: {
-      eyebrow: "WHY DAVAL.CLOUD",
+      eyebrow: "WHY HANDOFF",
       title: "Compare with building it yourself.",
-      body: "From hiring developers to managing servers — see the difference between building automation yourself and leaving it to daval.cloud.",
+      body: "From hiring developers to managing servers — see the difference between building automation yourself and leaving it to HandOff.",
       leftTitle: "Build Automation Yourself",
       leftChips: ["Developers needed", "High upfront cost", "Long development time", "Maintenance burden"],
       leftBody:
         "Hiring developers, learning n8n/Zapier, managing servers, setting up security… It takes months to build a single automation.",
-      rightTitle: "Leave It to daval.cloud",
+      rightTitle: "Leave It to HandOff",
       rightChips: ["Expert service", "Credit pricing", "Fast delivery", "AES-256 security"],
       rightBody:
         "Just submit a request and our experts handle everything from analysis to building. Pay only for what you use with credit-based pricing.",
@@ -392,19 +392,19 @@ export const copy: Record<Lang, Content> = {
     faq: {
       eyebrow: "FAQ",
       title: "Frequently asked questions.",
-      body: "Everything you need to know about daval.cloud.",
+      body: "Everything you need to know about HandOff.",
       items: [
         {
-          q: "What is daval.cloud?",
-          a: "daval.cloud is an AI automation agency. Our experts handle the entire process from workflow analysis to custom building, operations, and optimization.",
+          q: "What is HandOff?",
+          a: "HandOff is an AI automation agency. Our experts handle the entire process from workflow analysis to custom building, operations, and optimization.",
         },
         {
           q: "How do credits work?",
           a: "Credits are usage-based units consumed when automations run. Top up in advance and credits are deducted per run — with no separate server or maintenance fees.",
         },
         {
-          q: "What are .daval files?",
-          a: "Completed automations are delivered as .daval files encrypted with AES-256-GCM, keeping your workflows secure and ready to run from the dashboard.",
+          q: "What are .handoff files?",
+          a: "Completed automations are delivered as .handoff files encrypted with AES-256-GCM, keeping your workflows secure and ready to run from the dashboard.",
         },
         {
           q: "How long from request to delivery?",
@@ -415,7 +415,7 @@ export const copy: Record<Lang, Content> = {
           a: "Most repetitive work — data collection and cleanup, report generation, email/message dispatch, and system-to-system integrations — can be automated.",
         },
         {
-          q: "How is daval.cloud different from Zapier or Make?",
+          q: "How is HandOff different from Zapier or Make?",
           a: "You never have to learn or configure the tools yourself. Submit a request and experts handle analysis, building, and operations — you pay only for the credits you use.",
         },
       ],
@@ -464,8 +464,8 @@ export const copy: Record<Lang, Content> = {
       body: "Sign up free and submit your first automation request. No credit card required.",
     },
     footer: {
-      tagline: "daval.cloud handles AI automation end-to-end.",
-      rights: "© 2026 daval.cloud. All rights reserved.",
+      tagline: "HandOff handles AI automation end-to-end.",
+      rights: "© 2026 HandOff. All rights reserved.",
       cols: [
         { title: "Product", links: ["Process", "Services", "Pricing", "FAQ"] },
         { title: "Company", links: ["About", "Blog", "Careers", "Contact"] },
