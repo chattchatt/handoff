@@ -219,6 +219,7 @@ const workbenchCopy = {
     historyLoginHint: "히스토리는 GitHub 로그인 후 계정별로 저장됩니다.",
     historyLoginButton: "GitHub로 로그인",
     loginAria: "GitHub로 로그인",
+    connectLabel: "GitHub 연결",
     logoutAria: "로그아웃",
     noItems: "아직 반환된 항목이 없습니다.",
     goalEvidence: "입력 맥락에서 목표와 현재 상태를 추출했습니다.",
