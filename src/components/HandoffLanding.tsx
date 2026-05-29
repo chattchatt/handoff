@@ -97,7 +97,7 @@ export function HandoffLanding() {
               ))}
             </div>
             <div className="hidden sm:block">
-              <PrimaryButton onClick={goToWorkbench}>{t.cta.start}</PrimaryButton>
+              <StartButton />
             </div>
           </div>
         </div>
@@ -127,7 +127,7 @@ export function HandoffLanding() {
         </Reveal>
         <Reveal delay={0.15}>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <PrimaryButton onClick={goToWorkbench}>{t.cta.start}</PrimaryButton>
+            <StartButton />
             <SecondaryButton withPlay onClick={() => scrollToId("process")}>
               {t.cta.explore}
             </SecondaryButton>
@@ -222,7 +222,7 @@ export function HandoffLanding() {
               {t.timeline.body}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <PrimaryButton onClick={goToWorkbench}>{t.cta.start}</PrimaryButton>
+              <StartButton />
               <SecondaryButton withPlay onClick={() => scrollToId("pricing")}>
                 {t.cta.pricing}
               </SecondaryButton>
@@ -392,7 +392,7 @@ export function HandoffLanding() {
                   )}
                   <div className="mt-auto pt-7">
                     <button
-                      onClick={goToWorkbench}
+                      onClick={handleStart}
                       className={`w-full rounded-full px-5 py-3 text-sm font-bold transition ${
                         plan.popular
                           ? "bg-[var(--d-primary-fg)] text-[var(--d-primary)] hover:opacity-90"
@@ -418,7 +418,7 @@ export function HandoffLanding() {
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-base text-[var(--d-muted)]">{t.finalCta.body}</p>
           <div className="mt-9 flex justify-center">
-            <PrimaryButton onClick={goToWorkbench}>{t.cta.start}</PrimaryButton>
+            <StartButton />
           </div>
         </Reveal>
       </section>
