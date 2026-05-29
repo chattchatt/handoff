@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Star, Plus, Minus, Check, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Star, Plus, Minus, Check, X, Github, LogOut } from "lucide-react";
 import { copy, type Lang } from "@/components/landing/content";
+import { useAuth } from "@/lib/use-auth";
 import {
   Reveal,
   Pill,
@@ -21,6 +22,31 @@ export function HandoffLanding() {
   const [lang, setLang] = useState<Lang>(getInitialLang);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const t = copy[lang];
+  const auth = useAuth();
+
+  function handleStart() {
+    // Require GitHub login before entering the workbench.
+    if (!auth.configured || auth.loggedIn) {
+      goToWorkbench();
+    } else {
+      void auth.login();
+    }
+  }
+
+  function StartButton({ children }: { children?: ReactNode }) {
+    return (
+      <PrimaryButton onClick={handleStart}>
+        {!auth.configured || auth.loggedIn ? (
+          children ?? t.cta.start
+        ) : (
+          <>
+            <Github className="mr-2 h-4 w-4" />
+            {t.cta.github}
+          </>
+        )}
+      </PrimaryButton>
+    );
+  }
 
   function changeLang(next: Lang) {
     setLang(next);
@@ -70,9 +96,30 @@ export function HandoffLanding() {
                 </button>
               ))}
             </div>
-            <div className="hidden sm:block">
-              <PrimaryButton onClick={goToWorkbench}>{t.cta.start}</PrimaryButton>
-            </div>
+            {auth.configured && auth.loggedIn ? (
+              <div className="hidden items-center gap-2 sm:flex">
+                {auth.user?.avatarUrl && (
+                  <img
+                    src={auth.user.avatarUrl}
+                    alt={auth.user.login}
+                    className="h-8 w-8 rounded-full border border-[var(--d-border)]"
+                  />
+                )}
+                <StartButton />
+                <button
+                  type="button"
+                  onClick={() => void auth.logout()}
+                  aria-label="Logout"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--d-surface)] text-[var(--d-muted)] transition hover:text-[var(--d-fg)]"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="hidden sm:block">
+                <StartButton />
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -101,7 +148,7 @@ export function HandoffLanding() {
         </Reveal>
         <Reveal delay={0.15}>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <PrimaryButton onClick={goToWorkbench}>{t.cta.start}</PrimaryButton>
+            <StartButton />
             <SecondaryButton withPlay onClick={() => scrollToId("process")}>
               {t.cta.explore}
             </SecondaryButton>
@@ -196,7 +243,7 @@ export function HandoffLanding() {
               {t.timeline.body}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <PrimaryButton onClick={goToWorkbench}>{t.cta.start}</PrimaryButton>
+              <StartButton />
               <SecondaryButton withPlay onClick={() => scrollToId("pricing")}>
                 {t.cta.pricing}
               </SecondaryButton>
@@ -366,7 +413,7 @@ export function HandoffLanding() {
                   )}
                   <div className="mt-auto pt-7">
                     <button
-                      onClick={goToWorkbench}
+                      onClick={handleStart}
                       className={`w-full rounded-full px-5 py-3 text-sm font-bold transition ${
                         plan.popular
                           ? "bg-[var(--d-primary-fg)] text-[var(--d-primary)] hover:opacity-90"
@@ -392,7 +439,7 @@ export function HandoffLanding() {
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-base text-[var(--d-muted)]">{t.finalCta.body}</p>
           <div className="mt-9 flex justify-center">
-            <PrimaryButton onClick={goToWorkbench}>{t.cta.start}</PrimaryButton>
+            <StartButton />
           </div>
         </Reveal>
       </section>

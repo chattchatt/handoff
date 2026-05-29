@@ -35,7 +35,7 @@ export type Plan = {
 
 type Content = {
   nav: { process: string; services: string; pricing: string; faq: string };
-  cta: { start: string; explore: string; pricing: string; viewAllPlans: string };
+  cta: { start: string; github: string; explore: string; pricing: string; viewAllPlans: string };
   hero: {
     eyebrow: string;
     titleA: string;
@@ -81,6 +81,7 @@ export const copy: Record<Lang, Content> = {
     nav: { process: "작동 방식", services: "기능", pricing: "요금제", faq: "자주 묻는 질문" },
     cta: {
       start: "워크벤치 열기",
+      github: "GitHub로 시작하기",
       explore: "작동 방식 보기",
       pricing: "요금제 보기",
       viewAllPlans: "모든 플랜 보기",
@@ -279,6 +280,7 @@ export const copy: Record<Lang, Content> = {
     nav: { process: "How it works", services: "Features", pricing: "Pricing", faq: "FAQ" },
     cta: {
       start: "Open Workbench",
+      github: "Continue with GitHub",
       explore: "See how it works",
       pricing: "View Pricing",
       viewAllPlans: "View all plans",
