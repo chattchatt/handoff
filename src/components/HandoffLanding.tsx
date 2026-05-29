@@ -6,122 +6,75 @@ import { useAuth } from "@/lib/use-auth";
 type Lang = "ko" | "en";
 
 const GITHUB_URL = "https://github.com/chattchatt/handoff";
-const CLONE_COMMAND = "git clone https://github.com/chattchatt/handoff.git";
 
 const copy = {
   ko: {
     nav: {
-      demo: "Demo",
-      preview: "Preview",
-      how: "How",
-      cli: "CLI",
+      demo: "데모",
+      preview: "결과 예시",
+      how: "작동 방식",
       github: "GitHub",
     },
     team: "E-Hong",
-    project: "HandOff",
-    heroEyebrow: "Agent Execution Memory",
-    heroTitle: "회의록과 문서를 AI가 실행할 수 있는 작업 기억으로",
+    project: "Handoff",
+    heroEyebrow: "Agent Handoff 작업대",
+    heroTitle: "흩어진 업무 맥락을 다음 사람이 바로 이어받게",
     heroBody:
-      "HandOff는 회의록, 고객 메모, Slack 논의, 이슈 설명을 이어받는 담당자가 바로 사용할 수 있는 작업 브리프, 후속 작업, 근거 자료로 정리합니다.",
-    copyRepo: "Repo 복사",
-    copyCommands: "명령어 복사",
-    copied: "복사됨",
-    copiedCommands: "명령어 복사됨",
+      "회의록·메모·이슈·업무 요청을 붙여넣으면, 다음 담당자나 AI가 곧바로 일을 이어받을 수 있도록 핵심 요약·결정·해야 할 일·근거로 정리해 드립니다.",
     openGithub: "GitHub 열기",
     loginAria: "GitHub로 로그인",
     logoutAria: "로그아웃",
-    demoCta: "실행 기억 만들기",
-    previewCta: "예시 보기",
-    workbenchCta: "Workbench",
-    quickstart: "고급 사용자용 CLI",
-    terminalHint: "CLI가 필요한 팀은 아래 명령으로 로컬 실행면을 준비할 수 있습니다.",
-    cliRepoHint: "전체 README와 환경 변수, 배포 가이드는 GitHub 저장소에서 확인하세요.",
-    install: "Install",
-    configure: "Configure",
-    run: "Run",
-    copy: "Copy",
-    copiedShort: "Copied",
-    status: "Advanced path",
-    demoEyebrow: "IN-PAGE DEMO",
-    demoTitle: "먼저 페이지 안에서 실행 기억을 만들어보세요.",
+    demoCta: "지금 정리해 보기",
+    previewCta: "결과 예시 보기",
+    workbenchCta: "작업대 열기",
+    demoEyebrow: "직접 해보기",
+    demoTitle: "업무 맥락을 붙여넣고 바로 정리해 보세요.",
     demoBody:
-      "긴 원문을 붙여넣거나 TXT/MD/PDF를 선택하면 핵심 요약, 결정 사항, 후속 작업, 보완 필요 사항, 근거 자료가 생성됩니다.",
-    previewEyebrow: "RESULT DASHBOARD",
-    previewTitle: "결과는 이어받는 담당자가 읽는 순서로 정리됩니다.",
+      "긴 회의록을 붙여넣거나 TXT·MD·PDF 파일을 올리면 핵심 요약, 결정 사항, 해야 할 일, 더 확인할 점, 근거 자료가 자동으로 만들어집니다.",
+    previewEyebrow: "결과 화면",
+    previewTitle: "이어받는 사람이 읽는 순서 그대로 정리됩니다.",
     previewBody:
-      "사용자에게 먼저 필요한 것은 내부 패키지가 아니라 현재 상태, 결정, 후속 작업, 부족한 맥락, 원문 근거입니다.",
-    howEyebrow: "HOW IT WORKS",
-    howTitle: "흩어진 맥락을 실행 가능한 기억으로 압축합니다.",
+      "다음 담당자에게 먼저 필요한 것은 지금 상태, 결정된 내용, 해야 할 일, 부족한 맥락, 그리고 원문 근거입니다.",
+    howEyebrow: "작동 방식",
+    howTitle: "흩어진 맥락을 실행 가능한 상태로 압축합니다.",
     howBody:
-      "입력 원문에서 목적과 결정 사항을 분리하고, 이어받는 담당자가 바로 움직일 수 있도록 후속 작업과 검증 근거를 묶습니다.",
-    underHood:
-      "Hermes Core와 MCP 인터페이스는 제품 전면이 아니라 Agent와 개발자 도구가 호출하는 내부 실행면으로 둡니다.",
-    teamEyebrow: "PROJECT",
-    teamTitle: "HandOff by E-Hong",
-    teamBody:
-      "팀과 프로젝트의 첫 신호를 화면 상단과 Hero에 고정해, 사용자가 무엇을 쓰는지 바로 알 수 있게 했습니다.",
+      "원문에서 목적과 결정 사항을 분리하고, 이어받는 사람이 바로 움직일 수 있도록 해야 할 일과 근거를 함께 묶어 줍니다.",
   },
   en: {
     nav: {
       demo: "Demo",
-      preview: "Preview",
-      how: "How",
-      cli: "CLI",
+      preview: "Example",
+      how: "How it works",
       github: "GitHub",
     },
     team: "E-Hong",
-    project: "HandOff",
-    heroEyebrow: "Agent Execution Memory",
-    heroTitle: "Turn meeting notes and documents into work memory AI can execute",
+    project: "Handoff",
+    heroEyebrow: "Agent Handoff Workbench",
+    heroTitle: "Hand off scattered work so the next person picks it up instantly",
     heroBody:
-      "HandOff turns transcripts, customer notes, Slack threads, and issues into work briefs, follow-up tasks, and evidence the next executor can inherit.",
-    copyRepo: "Copy repo",
-    copyCommands: "Copy commands",
-    copied: "Copied",
-    copiedCommands: "Commands copied",
+      "Paste meeting notes, memos, issues, or requests and Handoff organizes them into a summary, decisions, next steps, and evidence — so the next teammate or AI can continue the work right away.",
     openGithub: "Open GitHub",
     loginAria: "Sign in with GitHub",
     logoutAria: "Sign out",
-    demoCta: "Create memory",
-    previewCta: "View example",
-    workbenchCta: "Workbench",
-    quickstart: "Advanced CLI",
-    terminalHint: "Teams that need the CLI can prepare the local runtime with these commands.",
-    cliRepoHint: "Full README, env vars, and deploy guide live in the GitHub repository.",
-    install: "Install",
-    configure: "Configure",
-    run: "Run",
-    copy: "Copy",
-    copiedShort: "Copied",
-    status: "Advanced path",
-    demoEyebrow: "IN-PAGE DEMO",
-    demoTitle: "Create an execution memory directly on the page.",
+    demoCta: "Organize it now",
+    previewCta: "See an example",
+    workbenchCta: "Open workbench",
+    demoEyebrow: "Try it here",
+    demoTitle: "Paste your work context and organize it instantly.",
     demoBody:
-      "Paste long context or select TXT/MD/PDF and inspect summary, decisions, follow-up tasks, missing context, and evidence.",
-    previewEyebrow: "RESULT DASHBOARD",
-    previewTitle: "The output follows the order a next executor actually reads.",
+      "Paste a long transcript or upload a TXT, MD, or PDF file, and Handoff generates a summary, decisions, next steps, open questions, and evidence automatically.",
+    previewEyebrow: "Result view",
+    previewTitle: "Organized in the order the next person actually reads.",
     previewBody:
-      "The user-facing result starts with current state, decisions, follow-up tasks, missing context, and source evidence instead of internal packages.",
-    howEyebrow: "HOW IT WORKS",
-    howTitle: "Compress scattered context into runnable memory.",
+      "What the next teammate needs first is the current state, decisions, next steps, missing context, and the source evidence.",
+    howEyebrow: "How it works",
+    howTitle: "Compress scattered context into a ready-to-run state.",
     howBody:
-      "HandOff separates intent and decisions from the raw input, then bundles follow-up work with the evidence needed for verification.",
-    underHood:
-      "Hermes Core and the MCP interface stay under the hood as the runtime surface for agents and developer tools.",
-    teamEyebrow: "PROJECT",
-    teamTitle: "HandOff by E-Hong",
-    teamBody:
-      "The project and team are visible from the first viewport so users immediately know what they are using.",
+      "Handoff separates intent and decisions from the raw input, then bundles next steps with the evidence needed to verify them.",
   },
 } satisfies Record<Lang, Record<string, string | Record<string, string>>>;
 
-const commands = [
-  ["install", CLONE_COMMAND],
-  ["configure", "cd handoff && npm install"],
-  ["run", "npm run dev  # 실행 후 http://127.0.0.1:8080"],
-] as const;
 
-const ALL_COMMANDS = commands.map(([, command]) => command).join("\n");
 
 type CardImportance = "confirmed" | "action" | "review" | "prompt";
 type PreviewCard = { title: string; body: string; importance: CardImportance; tag: string };
@@ -232,34 +185,6 @@ const processSteps: Record<Lang, string[]> = {
 const glassSurface =
   "border border-white/[0.16] bg-white/[0.075] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(255,255,255,0.05),0_24px_90px_rgba(0,0,0,0.38)] backdrop-blur-2xl";
 
-async function writeClipboardText(value: string) {
-  if (navigator.clipboard?.writeText) {
-    try {
-      await navigator.clipboard.writeText(value);
-      return true;
-    } catch {
-      // Fall back for embedded previews or browsers that block async clipboard writes.
-    }
-  }
-
-  const textarea = document.createElement("textarea");
-  textarea.value = value;
-  textarea.setAttribute("readonly", "");
-  textarea.style.position = "fixed";
-  textarea.style.left = "-9999px";
-  textarea.style.top = "0";
-  textarea.style.opacity = "0";
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
-
-  try {
-    return document.execCommand("copy");
-  } finally {
-    document.body.removeChild(textarea);
-  }
-}
-
 function getInitialLang(): Lang {
   if (typeof window === "undefined") return "ko";
   return new URLSearchParams(window.location.search).get("lang") === "en" ? "en" : "ko";
@@ -274,38 +199,6 @@ function scrollToId(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function CommandRow({ label, command, lang }: { label: string; command: string; lang: Lang }) {
-  const [copied, setCopied] = useState(false);
-  const text = copy[lang];
-
-  async function handleCopy() {
-    if (await writeClipboardText(command)) {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    }
-  }
-
-  return (
-    <div className="group grid gap-3 border-t border-white/10 bg-white/[0.015] px-4 py-4 sm:grid-cols-[1fr_auto] sm:items-center">
-      <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8f98aa]">
-          {label}
-        </p>
-        <code className="mt-2 flex min-w-0 items-start gap-3 break-all font-mono text-[14px] leading-6 text-[#f7f8fb] sm:break-normal sm:whitespace-nowrap">
-          <span className="select-none text-[#8fb3ff]">$</span>
-          <span>{command}</span>
-        </code>
-      </div>
-      <button
-        type="button"
-        className="h-9 rounded-md border border-white/50 bg-white/90 px-3 text-xs font-bold text-[#050609] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_10px_24px_rgba(0,0,0,0.25)] transition hover:bg-white"
-        onClick={handleCopy}
-      >
-        {copied ? (text.copiedShort as string) : (text.copy as string)}
-      </button>
-    </div>
-  );
-}
 
 function LogoLockup({ compact = false }: { compact?: boolean }) {
   return (
@@ -313,7 +206,7 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
       <img
         className={compact ? "h-8 w-8" : "h-11 w-11"}
         src="/handoff-logo.png"
-        alt="HandOff logo"
+        alt="Handoff logo"
       />
       <span className="grid leading-tight">
         <span
@@ -321,7 +214,7 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
             compact ? "text-base font-semibold text-white" : "text-xl font-semibold text-white"
           }
         >
-          HandOff
+          Handoff
         </span>
         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9aa3b5]">
           E-Hong
@@ -331,73 +224,8 @@ function LogoLockup({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function CliQuickstart({
-  lang,
-  commandsCopied,
-  onCopy,
-}: {
-  lang: Lang;
-  commandsCopied: boolean;
-  onCopy: () => void;
-}) {
-  const text = copy[lang];
-
-  return (
-    <div
-      id="cli"
-      className="mx-auto w-full max-w-4xl rounded-xl border border-white/[0.28] bg-white/[0.74] p-2 text-[#07080b] shadow-[inset_0_1px_0_rgba(255,255,255,0.70),0_32px_120px_rgba(0,0,0,0.44)] backdrop-blur-2xl"
-    >
-      <div className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#ff655a]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#ffbf4c]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#36c275]" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6673]">
-              Handoff CLI
-            </p>
-            <p className="mt-0.5 text-sm font-medium text-[#1f2430]">
-              {text.terminalHint as string}
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="h-9 w-fit rounded-md border border-black/10 bg-[#07080b]/[0.95] px-4 text-xs font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_10px_26px_rgba(0,0,0,0.24)] transition hover:bg-[#1a1f2a]"
-          onClick={onCopy}
-        >
-          {commandsCopied ? (text.copiedCommands as string) : (text.copyCommands as string)}
-        </button>
-      </div>
-      <div className="overflow-hidden rounded-lg border border-white/10 bg-[#050609]/[0.94] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-          <p className="font-mono text-[12px] text-[#9aa3b5]">quickstart.sh</p>
-          <span className="rounded-full border border-[#5D7EEB]/[0.25] bg-[#5D7EEB]/[0.10] px-2.5 py-1 text-[11px] font-semibold text-[#c7d9ff]">
-            {text.status as string}
-          </span>
-        </div>
-        {commands.map(([key, command]) => (
-          <CommandRow key={key} label={text[key] as string} command={command} lang={lang} />
-        ))}
-        <div className="flex flex-col gap-2 border-t border-white/10 bg-white/[0.015] px-4 py-3 text-xs text-[#8f98aa] sm:flex-row sm:items-center sm:justify-between">
-          <span>{text.cliRepoHint as string}</span>
-          <a
-            href={GITHUB_URL}
-            className="inline-flex w-fit items-center gap-1 rounded-md border border-white/15 bg-white/[0.06] px-3 py-1 font-semibold text-[#e8edf6] transition hover:bg-white/[0.10] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
-          >
-            {text.openGithub as string}
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function HandoffLanding() {
   const [lang, setLang] = useState<Lang>(getInitialLang);
-  const [commandsCopied, setCommandsCopied] = useState(false);
   const auth = useAuth();
   const text = copy[lang];
   const nav = text.nav as Record<string, string>;
@@ -409,12 +237,6 @@ export function HandoffLanding() {
     window.history.replaceState({}, "", url.toString());
   }
 
-  async function copyAllCommands() {
-    if (await writeClipboardText(ALL_COMMANDS)) {
-      setCommandsCopied(true);
-      window.setTimeout(() => setCommandsCopied(false), 1500);
-    }
-  }
 
   return (
     <main
@@ -445,10 +267,8 @@ export function HandoffLanding() {
             <button className="hover:text-white" onClick={() => scrollToId("how")}>
               {nav.how}
             </button>
-            <button className="hover:text-white" onClick={() => scrollToId("cli")}>
-              {nav.cli}
-            </button>
             <a href={GITHUB_URL} className="hover:text-white">
+
               {nav.github}
             </a>
           </nav>
@@ -581,7 +401,7 @@ export function HandoffLanding() {
         </div>
       </section>
 
-      <section id="how" className="relative z-10 mx-auto max-w-7xl px-5 py-16">
+      <section id="how" className="relative z-10 mx-auto max-w-7xl px-5 pb-28 pt-16">
         <div className="grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:items-start">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
@@ -591,8 +411,8 @@ export function HandoffLanding() {
             <p className="mt-4 text-sm leading-6 text-[#a8b2c4] md:text-base">
               {text.howBody as string}
             </p>
-            <p className="mt-4 text-sm leading-6 text-[#7d8798]">{text.underHood as string}</p>
           </div>
+
           <div className="grid gap-3 md:grid-cols-4">
             {processSteps[lang].map((item, index) => (
               <div key={item} className={`rounded-lg p-4 ${glassSurface}`}>
@@ -606,29 +426,6 @@ export function HandoffLanding() {
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-5 py-16">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
-          {text.quickstart as string}
-        </p>
-        <CliQuickstart lang={lang} commandsCopied={commandsCopied} onCopy={copyAllCommands} />
-      </section>
-
-      <section className="relative z-10 mx-auto max-w-7xl px-5 pb-24 pt-8">
-        <div
-          className={`flex flex-col gap-5 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between lg:p-8 ${glassSurface}`}
-        >
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
-              {text.teamEyebrow as string}
-            </p>
-            <h2 className="mt-3 text-2xl font-semibold md:text-3xl">{text.teamTitle as string}</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#a8b2c4]">
-              {text.teamBody as string}
-            </p>
-          </div>
-          <LogoLockup />
-        </div>
-      </section>
     </main>
   );
 }
