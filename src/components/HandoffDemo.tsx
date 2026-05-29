@@ -1360,7 +1360,7 @@ export function AuthButton({
   t,
 }: {
   auth: ReturnType<typeof useAuth>;
-  t: { loginAria: string; logoutAria: string };
+  t: { loginAria: string; logoutAria: string; connectLabel?: string };
 }) {
   // Hidden entirely when Supabase env is missing (auth degrades gracefully).
   if (!auth.configured) return null;
@@ -1390,9 +1390,10 @@ export function AuthButton({
       onClick={() => void auth.login()}
       aria-label={t.loginAria}
       title={t.loginAria}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.18] bg-white/[0.06] text-[#e8edf6] transition hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
+      className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-white/[0.18] bg-white/[0.06] px-4 text-sm font-semibold text-[#e8edf6] transition hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D7EEB]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1F31]"
     >
       <Github className="h-4 w-4" />
+      <span>{t.connectLabel ?? t.loginAria}</span>
     </button>
   );
 }
