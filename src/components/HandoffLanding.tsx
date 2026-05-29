@@ -440,7 +440,7 @@ export function HandoffLanding() {
             <p className="mt-4 text-sm leading-6 text-[#a8b2c4] md:text-base">
               {text.howBody as string}
             </p>
-            <p className="mt-4 text-sm leading-6 text-[#7d8798]">{text.underHood as string}</p>
+            
           </div>
           <div className="grid gap-3 md:grid-cols-4">
             {processSteps[lang].map((item, index) => (
@@ -455,29 +455,6 @@ export function HandoffLanding() {
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-5 py-16">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
-          {text.quickstart as string}
-        </p>
-        <CliQuickstart lang={lang} commandsCopied={commandsCopied} onCopy={copyAllCommands} />
-      </section>
-
-      <section className="relative z-10 mx-auto max-w-7xl px-5 pb-24 pt-8">
-        <div
-          className={`flex flex-col gap-5 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between lg:p-8 ${glassSurface}`}
-        >
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7dceb]">
-              {text.teamEyebrow as string}
-            </p>
-            <h2 className="mt-3 text-2xl font-semibold md:text-3xl">{text.teamTitle as string}</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#a8b2c4]">
-              {text.teamBody as string}
-            </p>
-          </div>
-          <LogoLockup />
-        </div>
-      </section>
     </main>
   );
 }
