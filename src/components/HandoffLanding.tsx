@@ -377,32 +377,32 @@ export function HandoffLanding() {
             {t.pricing.plans.map((plan, i) => (
               <Reveal key={plan.name} delay={i * 0.05}>
                 <div
-                  className={`flex h-full flex-col rounded-3xl border p-7 ${
+                  className={`flex h-full flex-col rounded-2xl p-7 ${
                     plan.popular
-                      ? "border-[var(--d-primary)] bg-[var(--d-primary)] text-[var(--d-primary-fg)]"
-                      : "border-[var(--d-border)] bg-[var(--d-bg)]"
+                      ? "border border-[#5D7EEB]/40 bg-[#5D7EEB] text-white shadow-[0_18px_70px_rgba(93,126,235,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]"
+                      : "glass-panel"
                   }`}
                 >
                   {plan.popular && (
-                    <span className="mb-3 inline-block w-fit rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
+                    <span className="mb-3 inline-block w-fit rounded-md bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
                       Most Popular
                     </span>
                   )}
-                  <h3 className="text-lg font-extrabold tracking-tight">{plan.name}</h3>
+                  <h3 className="text-lg font-semibold tracking-tight">{plan.name}</h3>
                   <p
                     className={`mt-1 text-sm ${
-                      plan.popular ? "text-[var(--d-primary-fg)]/75" : "text-[var(--d-muted)]"
+                      plan.popular ? "text-white/75" : "text-[var(--d-muted)]"
                     }`}
                   >
                     {plan.tagline}
                   </p>
                   {plan.price && (
-                    <p className="mt-6 text-3xl font-extrabold tracking-tight">{plan.price}</p>
+                    <p className="mt-6 text-3xl font-semibold tracking-tight">{plan.price}</p>
                   )}
                   {plan.credits && (
                     <p
                       className={`mt-1 text-xs font-semibold ${
-                        plan.popular ? "text-[var(--d-primary-fg)]/70" : "text-[var(--d-muted)]"
+                        plan.popular ? "text-white/70" : "text-[var(--d-muted)]"
                       }`}
                     >
                       {plan.credits} · {plan.perCredit}
@@ -411,16 +411,17 @@ export function HandoffLanding() {
                   <div className="mt-auto pt-7">
                     <button
                       onClick={handleStart}
-                      className={`w-full rounded-full px-5 py-3 text-sm font-bold transition ${
+                      className={`w-full rounded-lg px-5 py-3 text-sm font-semibold transition ${
                         plan.popular
-                          ? "bg-[var(--d-primary-fg)] text-[var(--d-primary)] hover:opacity-90"
-                          : "bg-[var(--d-primary)] text-[var(--d-primary-fg)] hover:-translate-y-0.5"
+                          ? "bg-white text-[#5D7EEB] hover:opacity-90"
+                          : "border border-[#5D7EEB]/40 bg-[#5D7EEB] text-white hover:-translate-y-0.5"
                       }`}
                     >
                       {plan.cta}
                     </button>
                   </div>
                 </div>
+
               </Reveal>
             ))}
           </div>
