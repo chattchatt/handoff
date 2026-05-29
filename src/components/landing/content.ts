@@ -81,6 +81,7 @@ export const copy: Record<Lang, Content> = {
     nav: { process: "작동 방식", services: "기능", pricing: "요금제", faq: "자주 묻는 질문" },
     cta: {
       start: "워크벤치 열기",
+      github: "GitHub로 시작하기",
       explore: "작동 방식 보기",
       pricing: "요금제 보기",
       viewAllPlans: "모든 플랜 보기",
