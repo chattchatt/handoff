@@ -1,0 +1,16 @@
+# Supabase project config. Project ref is set via `supabase link --project-ref ...`.
+# The only setting that matters for billing: Polar calls the webhook with no
+# Supabase JWT, so JWT verification must be off for that one function. The two
+# user-facing functions keep JWT verification on (default) — they require a
+# logged-in caller.
+
+project_id = "lcdgboolxhajstcuaikp"
+
+[functions.polar-webhook]
+verify_jwt = false
+
+[functions.create-checkout-session]
+verify_jwt = true
+
+[functions.create-portal-session]
+verify_jwt = true
