@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Star, Plus, Minus, Check, X, Github, LogOut } from "lucide-react";
-import { copy, type Lang } from "@/components/landing/content";
+import { copy, type Lang, type Plan } from "@/components/landing/content";
 import handoffLogo from "@/assets/handoff-logo.png";
 import { useAuth } from "@/lib/use-auth";
+import { startCheckout } from "@/lib/billing";
+import { BillingBanner } from "@/components/BillingBanner";
 import {
   Reveal,
   Pill,
@@ -23,6 +25,8 @@ function getInitialLang(): Lang {
 export function HandoffLanding() {
   const [lang, setLang] = useState<Lang>(getInitialLang);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [billingBusy, setBillingBusy] = useState<string | null>(null);
+  const [billingError, setBillingError] = useState<string | null>(null);
   const t = copy[lang];
   const auth = useAuth();
 
@@ -32,6 +36,38 @@ export function HandoffLanding() {
       goToWorkbench();
     } else {
       void auth.login();
+    }
+  }
+
+  async function handlePlanCta(plan: Plan) {
+    // Not sellable yet (no Polar product configured) — button is disabled anyway.
+    if (plan.comingSoon) return;
+    // Enterprise: route to contact. Free (no planId): into the workbench.
+    if (plan.enterprise) {
+      window.location.href = "mailto:hello@handoff.app?subject=Handoff%20Enterprise";
+      return;
+    }
+    if (!plan.planId) {
+      handleStart();
+      return;
+    }
+    // Paid plan: checkout is tied to a user, so require login first. The
+    // user returns to the landing page and can click again to check out.
+    if (auth.configured && !auth.loggedIn) {
+      void auth.login();
+      return;
+    }
+    setBillingError(null);
+    setBillingBusy(plan.name);
+    try {
+      await startCheckout(plan.planId);
+    } catch {
+      setBillingBusy(null);
+      setBillingError(
+        lang === "ko"
+          ? "결제를 시작하지 못했어요. 잠시 후 다시 시도해 주세요."
+          : "Could not start checkout. Please try again.",
+      );
     }
   }
 
@@ -59,6 +95,7 @@ export function HandoffLanding() {
 
   return (
     <div className="handoff-landing min-h-screen overflow-x-hidden">
+      <BillingBanner />
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-[var(--d-border)] bg-[#1a1f31]/80 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
@@ -411,14 +448,23 @@ export function HandoffLanding() {
                   )}
                   <div className="mt-auto pt-7">
                     <button
-                      onClick={handleStart}
-                      className={`w-full rounded-lg px-5 py-3 text-sm font-semibold transition ${
+                      onClick={() => void handlePlanCta(plan)}
+                      disabled={billingBusy === plan.name || plan.comingSoon}
+                      className={`w-full rounded-lg px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
                         plan.popular
                           ? "bg-white text-[#5D7EEB] hover:opacity-90"
                           : "border border-[#5D7EEB]/40 bg-[#5D7EEB] text-white hover:-translate-y-0.5"
                       }`}
                     >
-                      {plan.cta}
+                      {plan.comingSoon
+                        ? lang === "ko"
+                          ? "준비 중"
+                          : "Coming soon"
+                        : billingBusy === plan.name
+                          ? lang === "ko"
+                            ? "이동 중…"
+                            : "Redirecting…"
+                          : plan.cta}
                     </button>
                   </div>
                 </div>
@@ -426,6 +472,7 @@ export function HandoffLanding() {
               </Reveal>
             ))}
           </div>
+          {billingError && <p className="mt-6 text-center text-sm text-red-400">{billingError}</p>}
         </div>
       </section>
 

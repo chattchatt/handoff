@@ -20,6 +20,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Supabase CLI local link state
+supabase/.temp/
+
 # Local agent state
 .omc/
 .omx/

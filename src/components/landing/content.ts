@@ -31,6 +31,12 @@ export type Plan = {
   popular?: boolean;
   cta: string;
   enterprise?: boolean;
+  // Set on paid plans to route the CTA into checkout. Absent on Free
+  // (routes to the app) and Enterprise (routes to contact).
+  planId?: "pro" | "team";
+  // Plan is defined but not yet sellable (no Polar product configured). The CTA
+  // shows as a disabled "coming soon" button. Remove to go live.
+  comingSoon?: boolean;
 };
 
 type Content = {
@@ -244,6 +250,7 @@ export const copy: Record<Lang, Content> = {
           perCredit: "PDF·DOCX·XLSX 분석",
           popular: true,
           cta: "구매하기",
+          planId: "pro",
         },
         {
           name: "Team",
@@ -252,6 +259,7 @@ export const copy: Record<Lang, Content> = {
           credits: "5인 워크스페이스",
           perCredit: "공유 히스토리",
           cta: "구매하기",
+          planId: "team",
         },
         {
           name: "Enterprise",
@@ -439,6 +447,7 @@ export const copy: Record<Lang, Content> = {
           perCredit: "PDF·DOCX·XLSX parsing",
           popular: true,
           cta: "Buy now",
+          planId: "pro",
         },
         {
           name: "Team",
@@ -447,6 +456,7 @@ export const copy: Record<Lang, Content> = {
           credits: "5-seat workspace",
           perCredit: "Shared history",
           cta: "Buy now",
+          planId: "team",
         },
         {
           name: "Enterprise",
